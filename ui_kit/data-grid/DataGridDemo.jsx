@@ -1,6 +1,7 @@
-/* global React, DataGrid, GridSearchInput, ChipFilterBar, AdvancedFilterModal,
-   BulkActionBar, DataGridPagination, Button, IconButton, Badge, Avatar,
+/* global React, Button, IconButton, Badge, Avatar,
    Icon, Segmented, CollapsibleCard, Checkbox, cls, fmtMoney, fmtDate */
+
+const _W = new Proxy({}, { get: (_, k) => window[k] });
 
 // =========================================================================
 // DataGrid Demo — showcase of all features
@@ -97,7 +98,7 @@ const DEMO_ROWS = makeDemoRows(50);
 
 // --- 1. Basic grid -------------------------------------------------------
 const DemoBasic = () => (
-  <DataGrid
+  <_W.DataGrid
     columns={[
       { key: 'name', label: 'Name' },
       { key: 'email', label: 'Email', className: 'x-cell--mono' },
@@ -118,7 +119,7 @@ const DemoSortSelect = () => {
   const someSelected = selected.size > 0 && !allSelected;
 
   return (
-    <DataGrid
+    <_W.DataGrid
       columns={[
         {
           key: 'name',
@@ -190,7 +191,7 @@ const DemoSortSelect = () => {
       onSortChange={setSort}
       maxHeight={420}
       bulkBar={
-        <BulkActionBar
+        <_W.BulkActionBar
           mode="floating"
           selected={selected}
           totalRows={rows.length}
@@ -275,7 +276,7 @@ const DEMO_FILTER_FIELDS = [
 ];
 
 const DemoChipFilters = () => {
-  const gf = useGridFilters({
+  const gf = _W.useGridFilters({
     rows: DEMO_ROWS,
     filterFields: DEMO_FILTER_FIELDS,
     initialFilters: [
@@ -289,7 +290,7 @@ const DemoChipFilters = () => {
   });
 
   return (
-    <DataGrid
+    <_W.DataGrid
       columns={[
         { key: 'name', label: 'Name', sortable: true },
         { key: 'department', label: 'Department', sortable: true },
@@ -317,11 +318,11 @@ const DemoChipFilters = () => {
       maxHeight={400}
       toolbar={
         <>
-          <GridSearchInput
+          <_W.GridSearchInput
             {...gf.searchProps}
             placeholder="Search employees…"
           />
-          <ChipFilterBar {...gf.chipProps} />
+          <_W.ChipFilterBar {...gf.chipProps} />
           <div className="x-grid-toolbar__spacer" />
           <span className="x-grid-toolbar__count">
             {gf.filteredCount} employees
@@ -334,13 +335,13 @@ const DemoChipFilters = () => {
 
 // --- 4. Advanced filters -------------------------------------------------
 const DemoAdvancedFilters = () => {
-  const gf = useGridFilters({
+  const gf = _W.useGridFilters({
     rows: DEMO_ROWS.slice(0, 20),
     filterFields: DEMO_FILTER_FIELDS,
   });
 
   return (
-    <DataGrid
+    <_W.DataGrid
       columns={[
         { key: 'name', label: 'Name', sortable: true },
         { key: 'department', label: 'Department', sortable: true },
@@ -368,7 +369,7 @@ const DemoAdvancedFilters = () => {
       maxHeight={360}
       toolbar={
         <>
-          <GridSearchInput {...gf.searchProps} placeholder="Search…" />
+          <_W.GridSearchInput {...gf.searchProps} placeholder="Search…" />
           <div style={{ position: 'relative' }}>
             <Button
               variant="secondary"
@@ -380,7 +381,7 @@ const DemoAdvancedFilters = () => {
                 ? `Filters (${gf.conditions.length})`
                 : 'Advanced filter'}
             </Button>
-            <AdvancedFilterModal {...gf.advancedProps} />
+            <_W.AdvancedFilterModal {...gf.advancedProps} />
           </div>
           {gf.hasActiveFilters && (
             <Button variant="ghost" size="sm" onClick={gf.clearAll}>
@@ -399,7 +400,7 @@ const DemoAdvancedFilters = () => {
 
 // --- 5. Header groups ----------------------------------------------------
 const DemoHeaderGroups = () => (
-  <DataGrid
+  <_W.DataGrid
     columns={[
       { key: 'name', label: 'Employee', sortable: true },
       { key: 'department', label: 'Department', sortable: true },
@@ -442,7 +443,7 @@ const DemoRowGrouping = () => {
   const [selected, setSelected] = React.useState(new Set());
 
   return (
-    <DataGrid
+    <_W.DataGrid
       columns={[
         {
           key: 'name',
@@ -499,7 +500,7 @@ const DemoRowGrouping = () => {
 const LARGE_ROWS = makeDemoRows(10000);
 
 const DemoVirtualScroll = () => (
-  <DataGrid
+  <_W.DataGrid
     columns={[
       { key: 'id', label: '#', width: 70, className: 'x-cell--num' },
       { key: 'name', label: 'Name', sortable: true },
@@ -730,7 +731,7 @@ const DG_GROUP_OPTIONS = [
 ];
 
 const DemoCombined = () => {
-  const gf = useGridFilters({
+  const gf = _W.useGridFilters({
     rows: DEMO_ROWS,
     filterFields: DEMO_FILTER_FIELDS,
     initialFilters: [
@@ -771,7 +772,7 @@ const DemoCombined = () => {
   const someSelected = selected.size > 0 && !allSelected;
 
   const renderGrid = (fsMode) => (
-    <DataGrid
+    <_W.DataGrid
       columns={columns}
       rows={displayRows}
       selectable
@@ -797,11 +798,11 @@ const DemoCombined = () => {
       toolbar={
         <>
           {/* Filter zone (left) */}
-          <GridSearchInput
+          <_W.GridSearchInput
             {...gf.searchProps}
             placeholder="Search employees…"
           />
-          <ChipFilterBar {...gf.chipProps} maxVisible={3} />
+          <_W.ChipFilterBar {...gf.chipProps} maxVisible={3} />
           <Button
             variant="ghost"
             size="sm"
@@ -812,7 +813,7 @@ const DemoCombined = () => {
               ? `Advanced (${gf.conditions.length})`
               : 'Advanced'}
           </Button>
-          <AdvancedFilterModal {...gf.advancedProps} />
+          <_W.AdvancedFilterModal {...gf.advancedProps} />
           {gf.hasActiveFilters && (
             <Button
               variant="ghost"
@@ -830,7 +831,7 @@ const DemoCombined = () => {
           <div className="x-grid-toolbar__spacer" />
 
           {/* Action zone (right) */}
-          <GridSelect
+          <_W.GridSelect
             label="Group by"
             value={groupBy}
             options={DG_GROUP_OPTIONS}
@@ -880,7 +881,7 @@ const DemoCombined = () => {
       }
       footer={
         !isGrouped ? (
-          <DataGridPagination
+          <_W.DataGridPagination
             totalRows={gf.filteredCount}
             page={page}
             pageSize={pageSize}
@@ -893,7 +894,7 @@ const DemoCombined = () => {
         ) : undefined
       }
       bulkBar={
-        <BulkActionBar
+        <_W.BulkActionBar
           mode="floating"
           selected={selected}
           totalRows={displayRows.length}

@@ -169,7 +169,7 @@ const NAV_ITEMS = {
           activeFor: ['datagrid', 'datagrid-test'],
           children: [
             { id: 'datagrid', label: 'Showcase', navigateTo: 'datagrid' },
-            { id: 'datagrid-test', label: 'Test', navigateTo: 'datagrid-test' },
+            { id: 'datagrid-test', label: 'Invoices', navigateTo: 'datagrid-test' },
           ],
         },
       ],

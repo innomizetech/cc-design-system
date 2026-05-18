@@ -1014,7 +1014,7 @@ const DataGridTestPage = () => {
     <div className="x-page" style={{ maxWidth: 'none' }}>
       <div className="x-page__head">
         <div className="x-page__title-wrap">
-          <h1 className="x-h2">DataGrid Test</h1>
+          <h1 className="x-h2">DataGrid Invoices</h1>
           <div className="x-page__sub">
             Full-width grid with URL sync enabled. Filter state persists in the
             address bar.

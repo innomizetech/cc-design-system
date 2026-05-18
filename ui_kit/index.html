@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>XTND Console — Design System</title>
+    <meta name="viewport" content="width=1440" />
+    <link rel="stylesheet" href="../colors_and_type.css?v=23" />
+    <link rel="stylesheet" href="../components.css?v=23" />
+    <link rel="stylesheet" href="data-grid/data-grid.css?v=1" />
+    <style>
+      /* Window is the only scrolling surface — don't pin body to viewport height,
+       let content grow naturally. */
+      html,
+      body,
+      #root {
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script
+      src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+      integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+      integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+      integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+      crossorigin="anonymous"
+    ></script>
+
+    <script type="text/babel" src="Icon.jsx"></script>
+    <script type="text/babel" src="Primitives.jsx"></script>
+    <script type="text/babel" src="data-grid/useGridFilters.jsx"></script>
+    <script type="text/babel" src="data-grid/DataGrid.jsx"></script>
+    <script type="text/babel" src="data-grid/DataGridFilters.jsx"></script>
+    <script type="text/babel" src="data-grid/DataGridBulkBar.jsx"></script>
+    <script type="text/babel" src="data-grid/DataGridPagination.jsx"></script>
+    <script type="text/babel" src="data-grid/DataGridToolbar.jsx"></script>
+    <script type="text/babel" src="data-grid/DataGridDemo.jsx"></script>
+    <script type="text/babel" src="SidePanel.jsx"></script>
+    <script type="text/babel" src="NotificationsDrawer.jsx"></script>
+    <script type="text/babel" src="AppShell.jsx"></script>
+    <script type="text/babel" src="Dashboard.jsx"></script>
+    <script type="text/babel" src="InvoiceGrid.jsx"></script>
+    <script type="text/babel" src="SharedDetailComponents.jsx"></script>
+    <script type="text/babel" src="InvoiceDetailP1.jsx"></script>
+    <script type="text/babel" src="InvoiceDetail.jsx"></script>
+    <script type="text/babel" src="VendorBillGrid.jsx"></script>
+    <script type="text/babel" src="VendorBillDetail.jsx"></script>
+    <script type="text/babel" src="VendorBillDetailV2.jsx"></script>
+    <script type="text/babel" src="MatterGrid.jsx"></script>
+    <script type="text/babel" src="MatterDetail.jsx"></script>
+    <script type="text/babel" src="Settings.jsx"></script>
+    <script type="text/babel" src="UserPages.jsx"></script>
+    <script type="text/babel" src="ParadigmShowcase.jsx"></script>
+
+    <script type="text/babel">
+      const TWEAKS = /*EDITMODE-BEGIN*/ {
+        density: 'default',
+        startScreen: 'invoices',
+        module: 'willow',
+      }; /*EDITMODE-END*/
+
+      const PageHeader = ({ sub, crumbs, actions }) => (
+        <>
+          {crumbs && <Breadcrumbs items={crumbs} />}
+          <div className="x-page__head">
+            <div className="x-page__title-wrap">
+              {sub && <div className="x-page__sub">{sub}</div>}
+            </div>
+            {actions && <div className="x-page__actions">{actions}</div>}
+          </div>
+        </>
+      );
+
+      const App = () => {
+        const [screen, setScreen] = React.useState(
+          TWEAKS.startScreen || 'invoices',
+        );
+        const [current, setCurrent] = React.useState(
+          TWEAKS.startScreen || 'invoices',
+        );
+        const [invoice, setInvoice] = React.useState(null);
+        const [bill, setBill] = React.useState(null);
+        const [matter, setMatter] = React.useState(null);
+        const [moduleId, setModuleId] = React.useState(
+          TWEAKS.module || 'willow',
+        );
+        const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+        const [density, setDensity] = React.useState(() => {
+          try {
+            return (
+              localStorage.getItem('xtnd.density') ||
+              TWEAKS.density ||
+              'default'
+            );
+          } catch {
+            return TWEAKS.density || 'default';
+          }
+        });
+        const [theme, setTheme] = React.useState(() => {
+          try {
+            return localStorage.getItem('xtnd.theme') || 'light';
+          } catch {
+            return 'light';
+          }
+        });
+        const [navLayout, setNavLayout] = React.useState(() => {
+          try {
+            return localStorage.getItem('xtnd.navLayout') || 'sidebar';
+          } catch {
+            return 'sidebar';
+          }
+        });
+        const [iconSize, setIconSize] = React.useState(() => {
+          try {
+            return localStorage.getItem('xtnd.iconSize') || 'small';
+          } catch {
+            return 'small';
+          }
+        });
+        const [collapsedBehavior, setCollapsedBehavior] = React.useState(() => {
+          try {
+            return localStorage.getItem('xtnd.collapsedBehavior') || 'popover';
+          } catch {
+            return 'popover';
+          }
+        });
+        const [tweaksOpen, setTweaksOpen] = React.useState(false);
+        const [notifOpen, setNotifOpen] = React.useState(false);
+        const [notifs, setNotifs] = React.useState(() => SAMPLE_NOTIFS);
+        const [billLayout, setBillLayout] = React.useState('v1');
+
+        React.useEffect(() => {
+          document.documentElement.setAttribute('data-density', density);
+          try {
+            localStorage.setItem('xtnd.density', density);
+          } catch {}
+        }, [density]);
+
+        React.useEffect(() => {
+          document.documentElement.setAttribute('data-theme', theme);
+          try {
+            localStorage.setItem('xtnd.theme', theme);
+          } catch {}
+        }, [theme]);
+
+        React.useEffect(() => {
+          try {
+            localStorage.setItem('xtnd.navLayout', navLayout);
+          } catch {}
+        }, [navLayout]);
+
+        React.useEffect(() => {
+          try {
+            localStorage.setItem('xtnd.iconSize', iconSize);
+          } catch {}
+        }, [iconSize]);
+        React.useEffect(() => {
+          try {
+            localStorage.setItem('xtnd.collapsedBehavior', collapsedBehavior);
+          } catch {}
+        }, [collapsedBehavior]);
+
+        React.useEffect(() => {
+          const onMsg = (e) => {
+            if (!e.data) return;
+            if (e.data.type === '__activate_edit_mode') setTweaksOpen(true);
+            if (e.data.type === '__deactivate_edit_mode') setTweaksOpen(false);
+          };
+          window.addEventListener('message', onMsg);
+          window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+          return () => window.removeEventListener('message', onMsg);
+        }, []);
+
+        const persist = (patch) =>
+          window.parent.postMessage(
+            { type: '__edit_mode_set_keys', edits: patch },
+            '*',
+          );
+
+        const openInvoice = (row) => {
+          const found =
+            typeof row === 'string'
+              ? SAMPLE_INVOICES.find((i) => i.id === row)
+              : row;
+          setInvoice(found || SAMPLE_INVOICES[0]);
+          setScreen('detail');
+          setCurrent('detail');
+        };
+
+        const goInvoiceDelta = (delta) => {
+          if (!invoice) return;
+          const idx = SAMPLE_INVOICES.findIndex((i) => i.id === invoice.id);
+          if (idx < 0) return;
+          const next = idx + delta;
+          if (next < 0 || next >= SAMPLE_INVOICES.length) return;
+          setInvoice(SAMPLE_INVOICES[next]);
+        };
+        const currentInvoiceIdx = invoice
+          ? SAMPLE_INVOICES.findIndex((i) => i.id === invoice.id)
+          : -1;
+
+        const openBill = (row) => {
+          setBill(row || SAMPLE_BILLS[0]);
+        };
+
+        const goBillDelta = (delta) => {
+          if (!bill) return;
+          const idx = SAMPLE_BILLS.findIndex((b) => b.id === bill.id);
+          if (idx < 0) return;
+          const next = idx + delta;
+          if (next < 0 || next >= SAMPLE_BILLS.length) return;
+          setBill(SAMPLE_BILLS[next]);
+        };
+        const currentBillIdx = bill
+          ? SAMPLE_BILLS.findIndex((b) => b.id === bill.id)
+          : -1;
+
+        const openMatter = (row) => {
+          setMatter(row || SAMPLE_MATTERS[0]);
+          setScreen('matterDetail');
+          setCurrent('matterDetail');
+        };
+        const goMatterDelta = (delta) => {
+          if (!matter) return;
+          const idx = SAMPLE_MATTERS.findIndex((m) => m.id === matter.id);
+          if (idx < 0) return;
+          const next = idx + delta;
+          if (next < 0 || next >= SAMPLE_MATTERS.length) return;
+          setMatter(SAMPLE_MATTERS[next]);
+        };
+        const currentMatterIdx = matter
+          ? SAMPLE_MATTERS.findIndex((m) => m.id === matter.id)
+          : -1;
+
+        const navigate = (key) => {
+          setCurrent(key);
+          setScreen(key); // each nav item gets its own screen
+        };
+
+        const mod = MODULES.find((m) => m.id === moduleId) || MODULES[0];
+        const crumbsBase = [
+          { label: mod.name, onClick: () => navigate('dashboard') },
+        ];
+
+        // Build breadcrumbs — includes all child nav items
+        const invCrumb = [
+          ...crumbsBase,
+          { label: 'Invoices', onClick: () => navigate('invoices') },
+        ];
+        const billCrumb = [
+          ...crumbsBase,
+          { label: 'Vendor bills', onClick: () => navigate('bills') },
+        ];
+        const matterCrumb = [
+          ...crumbsBase,
+          { label: 'Matters', onClick: () => navigate('matters') },
+        ];
+        const ledgerCrumb = [
+          ...crumbsBase,
+          { label: 'Ledger', onClick: () => navigate('ledger') },
+        ];
+
+        const crumbs =
+          {
+            dashboard: [...crumbsBase, { label: 'Dashboard' }],
+            // Invoices
+            invoices: [...crumbsBase, { label: 'Invoices' }],
+            'invoices-pending': [...invCrumb, { label: 'Pending Review' }],
+            'invoices-approved': [...invCrumb, { label: 'Approved' }],
+            'invoices-all': [...invCrumb, { label: 'All Invoices' }],
+            detail: [...invCrumb, { label: invoice ? invoice.id : 'Invoice' }],
+            // Vendor bills
+            bills: [...crumbsBase, { label: 'Vendor bills' }],
+            'bills-draft': [...billCrumb, { label: 'Draft' }],
+            'bills-submitted': [...billCrumb, { label: 'Submitted' }],
+            billDetail: [...billCrumb, { label: bill ? bill.id : 'Bill' }],
+            // Matters
+            matters: [...crumbsBase, { label: 'Matters' }],
+            'matters-active': [...matterCrumb, { label: 'Active' }],
+            'matters-archived': [...matterCrumb, { label: 'Archived' }],
+            matterDetail: [
+              ...matterCrumb,
+              { label: matter ? matter.id : 'Matter' },
+            ],
+            // Ledger
+            ledger: [...crumbsBase, { label: 'Ledger' }],
+            'ledger-trust': [...ledgerCrumb, { label: 'Trust' }],
+            'ledger-trust-balances': [
+              ...ledgerCrumb,
+              { label: 'Trust' },
+              { label: 'Balances' },
+            ],
+            'ledger-trust-transactions': [
+              ...ledgerCrumb,
+              { label: 'Trust' },
+              { label: 'Transactions' },
+            ],
+            'ledger-receivables': [...ledgerCrumb, { label: 'Receivables' }],
+            // Other
+            approvals: [...crumbsBase, { label: 'Approvals' }],
+            workflows: [...crumbsBase, { label: 'Workflows' }],
+            vendors: [...crumbsBase, { label: 'Clients' }],
+            reports: [...crumbsBase, { label: 'Reports' }],
+            profile: [{ label: 'Profile' }],
+            'user-settings': [{ label: 'Settings' }],
+            datagrid: [...crumbsBase, { label: 'DataGrid' }],
+            'datagrid-test': [
+              ...crumbsBase,
+              { label: 'DataGrid' },
+              { label: 'Test' },
+            ],
+            members: [...crumbsBase, { label: 'Admin' }, { label: 'Members' }],
+            settings: [
+              ...crumbsBase,
+              { label: 'Admin' },
+              { label: 'Settings' },
+            ],
+          }[screen] ||
+          (screen.startsWith('ps-')
+            ? [...crumbsBase, { label: 'Paradigms' }]
+            : crumbsBase);
+
+        return (
+          <>
+            <AppShell
+              current={current}
+              onNavigate={navigate}
+              currentModuleId={moduleId}
+              onPickModule={(id) => {
+                setModuleId(id);
+                navigate('dashboard');
+                persist({ module: id });
+              }}
+              sidebarCollapsed={sidebarCollapsed}
+              onToggleSidebar={() => setSidebarCollapsed((v) => !v)}
+              onOpenNotifications={() => setNotifOpen(true)}
+              unreadCount={notifs.filter((n) => n.unread).length}
+              theme={theme}
+              onToggleTheme={() =>
+                setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
+              }
+              onThemeChange={(t) => setTheme(t)}
+              navLayout={navLayout}
+              onNavLayoutChange={(l) => setNavLayout(l)}
+              density={density}
+              onDensityChange={(d) => setDensity(d)}
+              iconSize={iconSize}
+              onIconSizeChange={(s) => setIconSize(s)}
+              collapsedBehavior={collapsedBehavior}
+              onCollapsedBehaviorChange={(b) => setCollapsedBehavior(b)}
+            >
+              {screen === 'dashboard' && (
+                <Dashboard onOpenInvoice={openInvoice} />
+              )}
+              {(screen === 'invoices' || screen === 'invoices-all') && (
+                <div className="x-page">
+                  <PageHeader
+                    crumbs={crumbs}
+                    sub="Review, annotate and approve vendor invoices. 128 total · 7 awaiting you."
+                  />
+                  <InvoiceGrid onOpen={openInvoice} />
+                </div>
+              )}
+              {screen === 'invoices-pending' && (
+                <div className="x-page">
+                  <PageHeader
+                    crumbs={crumbs}
+                    sub="Invoices awaiting your review. 7 pending."
+                  />
+                  <InvoiceGrid onOpen={openInvoice} />
+                </div>
+              )}
+              {screen === 'invoices-approved' && (
+                <div className="x-page">
+                  <PageHeader
+                    crumbs={crumbs}
+                    sub="Approved invoices ready for processing."
+                  />
+                  <InvoiceGrid onOpen={openInvoice} />
+                </div>
+              )}
+              {screen === 'detail' && invoice && (
+                <InvoiceDetailP1
+                  invoice={invoice}
+                  breadcrumbs={crumbs}
+                  onBack={() => navigate('invoices')}
+                  onPrev={() => goInvoiceDelta(-1)}
+                  onNext={() => goInvoiceDelta(1)}
+                  hasPrev={currentInvoiceIdx > 0}
+                  hasNext={
+                    currentInvoiceIdx >= 0 &&
+                    currentInvoiceIdx < SAMPLE_INVOICES.length - 1
+                  }
+                />
+              )}
+              {(screen === 'bills' ||
+                screen === 'bills-draft' ||
+                screen === 'bills-submitted') && (
+                <>
+                  <div className="x-page">
+                    <PageHeader
+                      crumbs={crumbs}
+                      sub={
+                        screen === 'bills-draft'
+                          ? 'Track and process vendor bills. Review exceptions, validate caps, and close approved items.'
+                          : screen === 'bills-submitted'
+                            ? 'Track and process vendor bills. Review exceptions, validate caps, and close approved items.'
+                            : 'Track and process vendor bills. Review exceptions, validate caps, and close approved items.'
+                      }
+                    />
+                    <VendorBillGrid onOpen={openBill} />
+                  </div>
+                  <DetailDrawer
+                    open={!!bill}
+                    onClose={() => setBill(null)}
+                    title={bill ? `${bill.vendor} — ${bill.id}` : ''}
+                    subtitle={
+                      bill ? `${fmtMoney(bill.amount)} · ${bill.status}` : ''
+                    }
+                  >
+                    {bill &&
+                      (billLayout === 'v1' ? (
+                        <VendorBillDetail
+                          bill={bill}
+                          onBack={() => setBill(null)}
+                          onPrev={() => goBillDelta(-1)}
+                          onNext={() => goBillDelta(1)}
+                          hasPrev={currentBillIdx > 0}
+                          hasNext={
+                            currentBillIdx >= 0 &&
+                            currentBillIdx < SAMPLE_BILLS.length - 1
+                          }
+                          onSwitchLayout={() => setBillLayout('v2')}
+                        />
+                      ) : (
+                        <VendorBillDetailV2
+                          bill={bill}
+                          onBack={() => setBill(null)}
+                          onPrev={() => goBillDelta(-1)}
+                          onNext={() => goBillDelta(1)}
+                          hasPrev={currentBillIdx > 0}
+                          hasNext={
+                            currentBillIdx >= 0 &&
+                            currentBillIdx < SAMPLE_BILLS.length - 1
+                          }
+                          onSwitchLayout={() => setBillLayout('v1')}
+                        />
+                      ))}
+                  </DetailDrawer>
+                </>
+              )}
+              {(screen === 'matters' ||
+                screen === 'matters-active' ||
+                screen === 'matters-archived') && (
+                <div className="x-page">
+                  <PageHeader
+                    crumbs={crumbs}
+                    sub={
+                      screen === 'matters-active'
+                        ? 'Active matters currently in progress.'
+                        : screen === 'matters-archived'
+                          ? 'Archived and closed matters.'
+                          : 'Open, active and historic client matters across the firm.'
+                    }
+                  />
+                  <MatterGrid onOpen={openMatter} />
+                </div>
+              )}
+              {screen === 'matterDetail' && matter && (
+                <MatterDetail
+                  matter={matter}
+                  breadcrumbs={crumbs}
+                  onBack={() => navigate('matters')}
+                  onPrev={() => goMatterDelta(-1)}
+                  onNext={() => goMatterDelta(1)}
+                  hasPrev={currentMatterIdx > 0}
+                  hasNext={
+                    currentMatterIdx >= 0 &&
+                    currentMatterIdx < SAMPLE_MATTERS.length - 1
+                  }
+                />
+              )}
+              {screen === 'settings' && (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
+                  }}
+                >
+                  <SettingsHub breadcrumbs={crumbs} />
+                </div>
+              )}
+              {screen === 'profile' && <UserProfilePage />}
+              {screen === 'user-settings' && <UserSettingsPage />}
+              {screen === 'datagrid' && <DataGridDemo />}
+              {screen === 'datagrid-test' && <DataGridTestPage />}
+              {screen.startsWith('ps-') && <ParadigmShowcase screen={screen} />}
+              {![
+                'dashboard',
+                'invoices',
+                'invoices-pending',
+                'invoices-approved',
+                'invoices-all',
+                'detail',
+                'bills',
+                'bills-draft',
+                'bills-submitted',
+                'billDetail',
+                'matters',
+                'matters-active',
+                'matters-archived',
+                'matterDetail',
+                'settings',
+                'profile',
+                'user-settings',
+                'datagrid',
+                'datagrid-test',
+              ].includes(screen) &&
+                !screen.startsWith('ps-') && (
+                  <div className="x-page">
+                    <PageHeader
+                      crumbs={crumbs}
+                      sub="Placeholder — this section is not yet built."
+                    />
+                    <div
+                      style={{
+                        padding: 60,
+                        textAlign: 'center',
+                        color: 'var(--fg-3)',
+                        border: '1px dashed var(--border)',
+                        borderRadius: 'var(--radius-lg)',
+                        background: 'var(--bg-surface)',
+                      }}
+                    >
+                      Coming soon
+                    </div>
+                  </div>
+                )}
+            </AppShell>
+
+            <NotificationsDrawer
+              open={notifOpen}
+              onClose={() => setNotifOpen(false)}
+              notifications={notifs}
+              onOpen={(n) => {
+                setNotifs((ns) =>
+                  ns.map((x) => (x.id === n.id ? { ...x, unread: false } : x)),
+                );
+                // Heuristic routing: if the notification text mentions an invoice id,
+                // open that invoice; otherwise stay put.
+                const m = /INV-\d+/.exec(n.text || '');
+                if (m) {
+                  const inv =
+                    SAMPLE_INVOICES.find((i) => i.id === m[0]) ||
+                    SAMPLE_INVOICES[0];
+                  setInvoice(inv);
+                  setScreen('detail');
+                  setCurrent('detail');
+                }
+              }}
+            />
+
+            {tweaksOpen && (
+              <div
+                style={{
+                  position: 'fixed',
+                  right: 20,
+                  bottom: 20,
+                  width: 280,
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-lg)',
+                  boxShadow: 'var(--shadow-lg)',
+                  padding: 14,
+                  zIndex: 9999,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 12,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 'var(--fs-sm)',
+                    fontWeight: 600,
+                    color: 'var(--fg-1)',
+                  }}
+                >
+                  Tweaks
+                </div>
+                <Field label="Density">
+                  <Segmented
+                    value={density}
+                    onChange={(v) => {
+                      setDensity(v);
+                      persist({ density: v });
+                    }}
+                    options={[
+                      { value: 'compact', label: 'Compact' },
+                      { value: 'default', label: 'Default' },
+                      { value: 'comfortable', label: 'Airy' },
+                    ]}
+                  />
+                </Field>
+                <Field label="Start screen">
+                  <Segmented
+                    value={TWEAKS.startScreen}
+                    onChange={(v) => {
+                      persist({ startScreen: v });
+                    }}
+                    options={[
+                      { value: 'dashboard', label: 'Dashboard' },
+                      { value: 'invoices', label: 'Invoices' },
+                      { value: 'bills', label: 'Vendor bills' },
+                      { value: 'settings', label: 'Settings' },
+                    ]}
+                  />
+                </Field>
+              </div>
+            )}
+          </>
+        );
+      };
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+  </body>
+</html>

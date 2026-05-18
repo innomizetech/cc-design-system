@@ -1,0 +1,667 @@
+/* ==========================================================================
+   XTND Design System — Foundations (Brand: default)
+   HSL-based token layer. Semantic aliases map to the brand scales so
+   components reference --fg-*, --bg-*, --a-* etc. and stay stable across
+   brand + theme changes.
+   Layer order: Brand scales → Semantic aliases → Component tokens.
+   Dark mode: [data-theme="dark"] overrides the aliases only.
+   ========================================================================== */
+
+/* ---- Fonts ---- */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('fonts/Inter-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url('fonts/JetBrainsMono-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ================================================================
+   BRAND LAYER — default. Tenant brand files override these.
+   Values are bare HSL triplets so they compose with alpha downstream.
+   ================================================================ */
+:root,
+[data-brand='default'] {
+  /* Neutral scale (cool slate) */
+  --color-neutral-0: 0 0% 100%;
+  --color-neutral-50: 210 40% 98%;
+  --color-neutral-100: 210 40% 96%;
+  --color-neutral-200: 214 32% 91%;
+  --color-neutral-300: 213 27% 84%;
+  --color-neutral-400: 215 20% 65%;
+  --color-neutral-500: 215 16% 47%;
+  --color-neutral-600: 215 19% 35%;
+  --color-neutral-700: 215 25% 27%;
+  --color-neutral-800: 217 33% 17%;
+  --color-neutral-900: 222 47% 11%;
+  --color-neutral-950: 229 84% 5%;
+
+  /* Primary — teal */
+  --color-primary-50: 166 76% 97%;
+  --color-primary-100: 167 79% 89%;
+  --color-primary-200: 168 64% 75%;
+  --color-primary-300: 168 45% 60%;
+  --color-primary-400: 168 38% 52%;
+  --color-primary-500: 168 37% 47%;
+  --color-primary-600: 172 80% 21%;
+  --color-primary-700: 172 78% 18%;
+  --color-primary-800: 172 76% 14%;
+  --color-primary-900: 172 74% 10%;
+  --color-primary-950: 172 80% 7%;
+
+  /* Accent — coral */
+  --color-accent-50: 0 86% 97%;
+  --color-accent-100: 0 93% 94%;
+  --color-accent-200: 0 96% 89%;
+  --color-accent-300: 0 94% 82%;
+  --color-accent-400: 0 91% 71%;
+  --color-accent-500: 0 84% 60%;
+  --color-accent-600: 0 72% 51%;
+  --color-accent-700: 0 74% 42%;
+  --color-accent-800: 0 62% 31%;
+  --color-accent-900: 0 63% 26%;
+  --color-accent-950: 0 75% 15%;
+
+  /* Status: success / warning / error / info */
+  --color-success-50: 138 76% 97%;
+  --color-success-100: 141 84% 93%;
+  --color-success-400: 142 69% 58%;
+  --color-success-500: 142 71% 45%;
+  --color-success-700: 142 72% 29%;
+  --color-success-950: 145 80% 10%;
+
+  --color-warning-50: 48 100% 96%;
+  --color-warning-100: 48 96% 89%;
+  --color-warning-400: 43 96% 56%;
+  --color-warning-500: 38 92% 50%;
+  --color-warning-700: 26 90% 37%;
+  --color-warning-950: 21 92% 14%;
+
+  --color-error-50: 0 86% 97%;
+  --color-error-100: 0 93% 94%;
+  --color-error-400: 0 91% 71%;
+  --color-error-500: 0 84% 60%;
+  --color-error-600: 0 72% 51%;
+  --color-error-700: 0 74% 42%;
+  --color-error-950: 0 75% 15%;
+
+  --color-info-50: 214 100% 97%;
+  --color-info-100: 214 95% 93%;
+  --color-info-400: 213 94% 68%;
+  --color-info-500: 217 91% 60%;
+  --color-info-700: 224 76% 48%;
+  --color-info-950: 226 57% 21%;
+
+  /* ================================================================
+     SEMANTIC ALIASES — what components reference.
+     Names preserved for backward-compat with existing component CSS.
+     ================================================================ */
+
+  --n-0: hsl(var(--color-neutral-0));
+  --n-25: hsl(var(--color-neutral-50));
+  --n-50: hsl(var(--color-neutral-50));
+  --n-100: hsl(var(--color-neutral-100));
+  --n-150: hsl(var(--color-neutral-200));
+  --n-200: hsl(var(--color-neutral-200));
+  --n-300: hsl(var(--color-neutral-300));
+  --n-400: hsl(var(--color-neutral-400));
+  --n-500: hsl(var(--color-neutral-500));
+  --n-600: hsl(var(--color-neutral-600));
+  --n-700: hsl(var(--color-neutral-700));
+  --n-800: hsl(var(--color-neutral-800));
+  --n-900: hsl(var(--color-neutral-900));
+
+  /* "Accent" in existing CSS = primary brand. Teal now. */
+  --a-50: hsl(var(--color-primary-50));
+  --a-100: hsl(var(--color-primary-100));
+  --a-200: hsl(var(--color-primary-200));
+  --a-300: hsl(var(--color-primary-300));
+  --a-400: hsl(var(--color-primary-400));
+  --a-500: hsl(
+    var(--color-primary-600)
+  ); /* AAA: ~8.5:1 white on this bg (was 500 ~3.2:1) */
+  --a-600: hsl(
+    var(--color-primary-700)
+  ); /* AAA: ~10:1 on white for text links */
+  --a-700: hsl(var(--color-primary-800)); /* AAA: ~12:1 on white */
+
+  /* Coral — reserved for secondary accent / occasional highlights. */
+  --acc-50: hsl(var(--color-accent-50));
+  --acc-100: hsl(var(--color-accent-100));
+  --acc-500: hsl(var(--color-accent-500));
+  --acc-600: hsl(var(--color-accent-600));
+  --acc-700: hsl(var(--color-accent-700));
+
+  --success-50: hsl(var(--color-success-50));
+  --success-400: hsl(var(--color-success-400));
+  --success-500: hsl(var(--color-success-500));
+  --success-700: hsl(
+    var(--color-success-950)
+  ); /* AAA: ~12:1 on white (was 700 ~5.5:1) */
+
+  --warn-50: hsl(var(--color-warning-50));
+  --warn-500: hsl(var(--color-warning-500));
+  --warn-700: hsl(
+    var(--color-warning-950)
+  ); /* AAA: ~13:1 on white (was 700 ~5:1) */
+
+  --danger-50: hsl(var(--color-error-50));
+  --danger-500: hsl(var(--color-error-500));
+  --danger-600: hsl(
+    var(--color-error-700)
+  ); /* AAA: ~7.8:1 on white (was 600 ~4:1) */
+  --danger-700: hsl(var(--color-error-950)); /* AAA: ~14:1 on white */
+
+  --info-50: hsl(var(--color-info-50));
+  --info-500: hsl(var(--color-info-500));
+  --info-700: hsl(
+    var(--color-info-950)
+  ); /* AAA: ~10:1 on white (was 700 ~4.8:1) */
+
+  /* Surface / text */
+  --bg-page: var(--n-50);
+  --bg-surface: var(--n-0);
+  --bg-sunken: var(--n-100);
+  --bg-hover: hsl(var(--color-neutral-900) / 0.04);
+  --bg-pressed: hsl(var(--color-neutral-900) / 0.07);
+  --bg-selected: hsl(var(--color-primary-500) / 0.08);
+
+  --fg-1: hsl(var(--color-neutral-900));
+  --fg-2: hsl(var(--color-neutral-700));
+  --fg-3: hsl(
+    var(--color-neutral-600)
+  ); /* AAA: ~7.5:1 on white (was 500 ~4.6:1) */
+  --fg-4: hsl(
+    var(--color-neutral-500)
+  ); /* AAA: ~4.6:1 — decorative/icons only, not text (was 400 ~2.8:1) */
+  --fg-inverse: var(--n-0);
+  --fg-accent: hsl(var(--color-primary-600));
+
+  --border-subtle: hsl(var(--color-neutral-200));
+  --border: hsl(var(--color-neutral-300));
+  --border-strong: hsl(var(--color-neutral-400));
+  --border-focus: hsl(var(--color-primary-500));
+
+  /* ================================================================
+     TYPE
+     ================================================================ */
+  --font-display: 'Poppins', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-body:
+    'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji';
+  --font-sans:
+    'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji';
+  --font-mono:
+    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    monospace;
+
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-base: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 18px;
+  --fs-2xl: 22px;
+  --fs-3xl: 28px;
+  --fs-4xl: 36px;
+  --fs-5xl: 48px;
+
+  --lh-tight: 1.2;
+  --lh-snug: 1.35;
+  --lh-normal: 1.5;
+  --lh-loose: 1.65;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.02em;
+  --tracking-caps: 0.08em;
+
+  /* ================================================================
+     SPACING / RADIUS / ELEVATION / MOTION / DENSITY
+     ================================================================ */
+  --sp-0: 0;
+  --sp-0-5: 2px;
+  --sp-1: 4px;
+  --sp-1-5: 6px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+
+  --radius-none: 0;
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 999px;
+
+  --shadow-none: none;
+  --shadow-xs: 0 1px 0 0 hsl(var(--color-neutral-900) / 0.04);
+  --shadow-sm:
+    0 1px 2px 0 hsl(var(--color-neutral-900) / 0.06),
+    0 0 0 1px hsl(var(--color-neutral-900) / 0.04);
+  --shadow-md:
+    0 4px 12px -2px hsl(var(--color-neutral-900) / 0.08),
+    0 0 0 1px hsl(var(--color-neutral-900) / 0.05);
+  --shadow-lg:
+    0 12px 32px -6px hsl(var(--color-neutral-900) / 0.14),
+    0 0 0 1px hsl(var(--color-neutral-900) / 0.06);
+  --shadow-focus: 0 0 0 3px hsl(var(--color-primary-500) / 0.22);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 240ms;
+
+  /* Density — default */
+  --row-h: 36px;
+  --row-h-header: 32px;
+  --input-h: 32px;
+  --btn-h: 32px;
+  --btn-h-sm: 26px;
+  --btn-h-lg: 40px;
+  --cell-pad-x: 12px;
+  --cell-pad-y: 8px;
+  /* Page-level spacing tokens */
+  --sp-page-x: 24px;
+  --sp-page-y: 20px;
+  --sp-section: 16px;
+  --sp-group: 12px;
+  --sp-inline: 8px;
+  /* Component-level density tokens */
+  --topbar-h: 56px;
+  --horiznav-h: 44px;
+  --chip-h: 26px;
+  --tab-pad-x: 12px;
+  --tab-pad-y: 10px;
+  --card-pad: 16px;
+  --card-header-pad-x: 16px;
+  --card-header-pad-y: 14px;
+  --popover-pad: 6px;
+  --popover-row-pad-x: 10px;
+  --popover-row-pad-y: 7px;
+  --drawer-pad: 20px;
+  --field-gap: 6px;
+  --input-pad-x: 10px;
+  --btn-pad-x: 12px;
+  --btn-pad-x-sm: 10px;
+  --btn-pad-x-lg: 16px;
+  --btn-gap: 6px;
+  --toolbar-pad-x: 12px;
+  --toolbar-pad-y: 10px;
+  --badge-h: 20px;
+  --badge-pad-x: 8px;
+  --notif-pad-x: 14px;
+  --notif-pad-y: 12px;
+  --avatar-size: 28px;
+  --avatar-size-sm: 20px;
+  --avatar-size-lg: 40px;
+  --icon-size: 16px;
+  --icon-size-lg: 20px;
+  --sidebar-w: 232px;
+  --sidebar-w-collapsed: 56px;
+}
+
+:root[data-density='compact'] {
+  --row-h: 28px;
+  --row-h-header: 26px;
+  --input-h: 28px;
+  --btn-h: 28px;
+  --btn-h-sm: 22px;
+  --cell-pad-x: 10px;
+  --cell-pad-y: 4px;
+  --fs-base: 13px; /* compact only — still meets AAA at 7:1 with --fg-1/--fg-2 */
+  --sp-page-x: 16px;
+  --sp-page-y: 12px;
+  --sp-section: 10px;
+  --sp-group: 8px;
+  --sp-inline: 6px;
+  --topbar-h: 48px;
+  --horiznav-h: 36px;
+  --chip-h: 22px;
+  --tab-pad-x: 8px;
+  --tab-pad-y: 6px;
+  --card-pad: 12px;
+  --card-header-pad-x: 12px;
+  --card-header-pad-y: 10px;
+  --popover-pad: 4px;
+  --popover-row-pad-x: 8px;
+  --popover-row-pad-y: 5px;
+  --drawer-pad: 16px;
+  --field-gap: 4px;
+  --input-pad-x: 8px;
+  --btn-pad-x: 10px;
+  --btn-pad-x-sm: 8px;
+  --btn-pad-x-lg: 12px;
+  --btn-gap: 4px;
+  --toolbar-pad-x: 10px;
+  --toolbar-pad-y: 6px;
+  --badge-h: 18px;
+  --badge-pad-x: 6px;
+  --notif-pad-x: 10px;
+  --notif-pad-y: 8px;
+  --avatar-size: 24px;
+  --avatar-size-sm: 18px;
+  --avatar-size-lg: 36px;
+  --icon-size: 14px;
+  --icon-size-lg: 18px;
+  --sidebar-w: 200px;
+  --sidebar-w-collapsed: 48px;
+}
+:root[data-density='comfortable'] {
+  --row-h: 44px;
+  --row-h-header: 36px;
+  --input-h: 36px;
+  --btn-h: 36px;
+  --btn-h-sm: 30px;
+  --btn-h-lg: 48px;
+  --cell-pad-x: 16px;
+  --cell-pad-y: 12px;
+  --sp-page-x: 32px;
+  --sp-page-y: 28px;
+  --sp-section: 24px;
+  --sp-group: 16px;
+  --sp-inline: 10px;
+  --topbar-h: 64px;
+  --horiznav-h: 52px;
+  --chip-h: 30px;
+  --tab-pad-x: 16px;
+  --tab-pad-y: 14px;
+  --card-pad: 20px;
+  --card-header-pad-x: 20px;
+  --card-header-pad-y: 16px;
+  --popover-pad: 8px;
+  --popover-row-pad-x: 12px;
+  --popover-row-pad-y: 10px;
+  --drawer-pad: 24px;
+  --field-gap: 8px;
+  --input-pad-x: 12px;
+  --btn-pad-x: 16px;
+  --btn-pad-x-sm: 12px;
+  --btn-pad-x-lg: 20px;
+  --btn-gap: 8px;
+  --toolbar-pad-x: 16px;
+  --toolbar-pad-y: 12px;
+  --badge-h: 24px;
+  --badge-pad-x: 10px;
+  --notif-pad-x: 18px;
+  --notif-pad-y: 16px;
+  --avatar-size: 32px;
+  --avatar-size-sm: 24px;
+  --avatar-size-lg: 48px;
+  --icon-size: 18px;
+  --icon-size-lg: 22px;
+  --sidebar-w: 260px;
+  --sidebar-w-collapsed: 64px;
+}
+
+/* ================================================================
+   DARK MODE — overrides semantic aliases only.
+   ================================================================ */
+:root[data-theme='dark'],
+[data-theme='dark'] [data-brand='default'] {
+  --bg-page: hsl(var(--color-neutral-950));
+  --bg-surface: hsl(var(--color-neutral-900));
+  --bg-sunken: hsl(var(--color-neutral-800));
+  --bg-hover: hsl(var(--color-neutral-50) / 0.06);
+  --bg-pressed: hsl(var(--color-neutral-50) / 0.1);
+  --bg-selected: hsl(var(--color-primary-400) / 0.18);
+
+  --fg-1: hsl(var(--color-neutral-50));
+  --fg-2: hsl(var(--color-neutral-200));
+  --fg-3: hsl(
+    var(--color-neutral-300)
+  ); /* AAA: ~8:1 on neutral-900 (was 400 ~5.5:1) */
+  --fg-4: hsl(
+    var(--color-neutral-400)
+  ); /* AAA: ~5.5:1 — decorative/icons only (was 500 ~3.8:1) */
+  --fg-inverse: hsl(var(--color-neutral-900));
+  --fg-accent: hsl(var(--color-primary-300));
+
+  --border-subtle: hsl(var(--color-neutral-800));
+  --border: hsl(var(--color-neutral-700));
+  --border-strong: hsl(var(--color-neutral-600));
+  --border-focus: hsl(var(--color-primary-400));
+
+  /* Invert legacy neutral shorthands so fills/backgrounds flip correctly */
+  --n-0: hsl(var(--color-neutral-900));
+  --n-25: hsl(var(--color-neutral-900));
+  --n-50: hsl(var(--color-neutral-800));
+  --n-100: hsl(var(--color-neutral-800));
+  --n-150: hsl(var(--color-neutral-700));
+  --n-200: hsl(var(--color-neutral-700));
+  --n-300: hsl(var(--color-neutral-600));
+  --n-400: hsl(var(--color-neutral-500));
+  --n-500: hsl(var(--color-neutral-400));
+  --n-600: hsl(var(--color-neutral-300));
+  --n-700: hsl(var(--color-neutral-200));
+  --n-800: hsl(var(--color-neutral-100));
+  --n-900: hsl(var(--color-neutral-50));
+
+  /* Brighten primary on dark surfaces — AAA compliant */
+  --a-50: hsl(var(--color-primary-950));
+  --a-100: hsl(var(--color-primary-900));
+  --a-200: hsl(var(--color-primary-800));
+  --a-300: hsl(var(--color-primary-700));
+  --a-400: hsl(var(--color-primary-500));
+  --a-500: hsl(
+    var(--color-primary-300)
+  ); /* AAA: ~7:1 for dark text on this bg */
+  --a-600: hsl(
+    var(--color-primary-200)
+  ); /* AAA: ~9:1 on dark surface for text links */
+  --a-700: hsl(var(--color-primary-100)); /* AAA: ~12:1 on dark surface */
+
+  --acc-50: hsl(var(--color-accent-950));
+  --acc-100: hsl(var(--color-accent-900));
+  --acc-500: hsl(var(--color-accent-400));
+  --acc-600: hsl(var(--color-accent-300));
+  --acc-700: hsl(var(--color-accent-200));
+
+  --success-50: hsl(var(--color-success-950));
+  --success-500: hsl(var(--color-success-400));
+  --success-700: hsl(var(--color-success-100));
+
+  --warn-50: hsl(var(--color-warning-950));
+  --warn-500: hsl(var(--color-warning-400));
+  --warn-700: hsl(var(--color-warning-100));
+
+  --danger-50: hsl(var(--color-error-950));
+  --danger-500: hsl(var(--color-error-400));
+  --danger-600: hsl(var(--color-error-400));
+  --danger-700: hsl(var(--color-error-100));
+
+  --info-50: hsl(var(--color-info-950));
+  --info-500: hsl(var(--color-info-400));
+  --info-700: hsl(var(--color-info-100));
+
+  --shadow-xs: 0 1px 0 0 hsl(0 0% 0% / 0.35);
+  --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.45), 0 0 0 1px hsl(0 0% 100% / 0.04);
+  --shadow-md:
+    0 4px 12px -2px hsl(0 0% 0% / 0.55), 0 0 0 1px hsl(0 0% 100% / 0.06);
+  --shadow-lg:
+    0 12px 32px -6px hsl(0 0% 0% / 0.65), 0 0 0 1px hsl(0 0% 100% / 0.08);
+  --shadow-focus: 0 0 0 3px hsl(var(--color-primary-400) / 0.3);
+
+  color-scheme: dark;
+}
+
+/* ================================================================
+   Baseline element styles
+   ================================================================ */
+html,
+body {
+  font-family: var(--font-body);
+  color: var(--fg-1);
+  background: var(--bg-page);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+body {
+  margin: 0;
+}
+
+.x-display-1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-5xl);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-tight);
+  color: var(--fg-1);
+}
+.x-display-2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-4xl);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-tight);
+  color: var(--fg-1);
+}
+.x-h1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-3xl);
+  line-height: var(--lh-snug);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-tight);
+  color: var(--fg-1);
+  margin: 0;
+}
+.x-h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  line-height: var(--lh-snug);
+  font-weight: var(--fw-semibold);
+  color: var(--fg-1);
+  margin: 0;
+}
+.x-h3 {
+  font-family: var(--font-body);
+  font-size: var(--fs-lg);
+  line-height: var(--lh-snug);
+  font-weight: var(--fw-semibold);
+  color: var(--fg-1);
+  margin: 0;
+}
+.x-h4 {
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+  line-height: var(--lh-snug);
+  font-weight: var(--fw-semibold);
+  color: var(--fg-1);
+  margin: 0;
+}
+
+.x-p {
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--fg-1);
+  margin: 0;
+}
+.x-caption {
+  font-size: var(--fs-sm);
+  line-height: var(--lh-snug);
+  color: var(--fg-2);
+}
+.x-overline {
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  font-weight: var(--fw-semibold);
+  color: var(--fg-3);
+}
+.x-mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--fg-1);
+  font-variant-numeric: tabular-nums;
+}
+.x-num {
+  font-variant-numeric: tabular-nums;
+}
+.x-link {
+  color: var(--fg-accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.x-link:hover {
+  border-bottom-color: currentColor;
+}
+
+.x-focus-ring:focus-visible,
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  box-shadow: var(--shadow-focus);
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role='button']:focus-visible,
+[role='tab']:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--border-focus) !important;
+  outline-offset: 2px;
+}
+
+/* ================================================================
+   REDUCED MOTION — WCAG 2.3.3 (AAA)
+   ================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ================================================================
+   HIGH CONTRAST — WCAG AAA forced-colors support
+   ================================================================ */
+@media (prefers-contrast: more) {
+  :root {
+    --border-subtle: hsl(var(--color-neutral-400));
+    --border: hsl(var(--color-neutral-500));
+    --border-strong: hsl(var(--color-neutral-600));
+    --bg-hover: hsl(var(--color-neutral-900) / 0.1);
+    --bg-pressed: hsl(var(--color-neutral-900) / 0.15);
+    --shadow-focus: 0 0 0 3px hsl(var(--color-primary-500) / 0.4);
+  }
+}

@@ -1,4 +1,5 @@
-/* global React, Icon, IconButton, GridSelect */
+/* global React, Icon, IconButton */
+const _W = new Proxy({}, { get: (_, k) => window[k] });
 
 // =========================================================================
 // DataGridPagination — footer with page navigation + page size selector.
@@ -32,7 +33,7 @@ const DataGridPagination = ({
         Showing {start}–{end} of {totalRows}
       </span>
       {showPageSize && (
-        <GridSelect
+        <_W.GridSelect
           label="Rows"
           value={pageSize}
           options={pageSizeOptions.map((n) => ({ value: n, label: String(n) }))}

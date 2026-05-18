@@ -1,4 +1,5 @@
-/* global React, Icon, Button, IconButton, Checkbox, Badge, Chip, cls, formatFilterDisplay, GridSelect */
+/* global React, Icon, Button, IconButton, Checkbox, Badge, Chip, cls, formatFilterDisplay */
+const _W = new Proxy({}, { get: (_, k) => window[k] });
 
 // =========================================================================
 // DataGrid filter components — composable pieces for the toolbar slot.
@@ -255,8 +256,8 @@ const ChipFilterBar = ({
       {/* +N more / Show less toggle */}
       {overflowCount > 0 && (
         <button
-type="button"
-className="x-filter-bar__more"
+          type="button"
+          className="x-filter-bar__more"
           onClick={() => setExpanded(!expanded)}
         >
           {expanded ? 'Show less' : `+${overflowCount} more`}
@@ -267,8 +268,8 @@ const ChipFilterBar = ({
       {availableFields.length > 0 && (
         <div style={{ position: 'relative', zIndex: addOpen ? 40 : undefined }} ref={addRef}>
           <button
-type="button"
-className="x-filter-bar__add"
+            type="button"
+            className="x-filter-bar__add"
             onClick={() => setAddOpen(!addOpen)}
           >
             <Icon name="filter" size={12} />
@@ -375,7 +376,7 @@ const AdvancedFilterModal = ({
           return (
             <div key={c.id} className="x-filter-modal__row">
               <div className="x-filter-modal__field-select">
-                <GridSelect
+                <_W.GridSelect
                   value={c.field}
                   placeholder="Select field"
                   options={fields.map((f) => ({ value: f.id, label: f.label, icon: f.icon }))}
@@ -383,7 +384,7 @@ const AdvancedFilterModal = ({
                 />
               </div>
               <div className="x-filter-modal__op-select">
-                <GridSelect
+                <_W.GridSelect
                   value={c.operator}
                   options={ops}
                   onChange={(v) => updateCondition(c.id, { operator: v })}
@@ -391,7 +392,7 @@ const AdvancedFilterModal = ({
               </div>
               {selectedField?.type === 'multiselect' ? (
                 <div style={{ flex: 1 }}>
-                  <GridSelect
+                  <_W.GridSelect
                     value={c.value}
                     placeholder="Select…"
                     options={selectedField.options || []}

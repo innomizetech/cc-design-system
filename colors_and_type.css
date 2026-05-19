@@ -448,9 +448,9 @@
   --fg-inverse: hsl(var(--color-neutral-900));
   --fg-accent: hsl(var(--color-primary-300));
 
-  --border-subtle: hsl(var(--color-neutral-800));
-  --border: hsl(var(--color-neutral-700));
-  --border-strong: hsl(var(--color-neutral-600));
+  --border-subtle: hsl(var(--color-neutral-700));
+  --border: hsl(var(--color-neutral-600));
+  --border-strong: hsl(var(--color-neutral-500));
   --border-focus: hsl(var(--color-primary-400));
 
   /* Invert legacy neutral shorthands so fills/backgrounds flip correctly */

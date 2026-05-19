@@ -1574,207 +1574,74 @@ const SummaryContent = () => (
   </div>
 );
 
-// ExpensesGrid — searchable expenses table
+// ExpensesGrid — using shared DataGrid
+const EXPENSE_COLUMNS = [
+  {
+    key: 'date',
+    label: 'Date',
+    sortable: true,
+    width: 120,
+    render: (v) => <span style={{ color: 'var(--fg-2)' }}>{fmtDate(v)}</span>,
+  },
+  {
+    key: 'expense',
+    label: 'Expense',
+    sortable: true,
+    wrap: true,
+  },
+  {
+    key: 'amount',
+    label: 'Amount',
+    sortable: true,
+    width: 130,
+    align: 'right',
+    className: 'x-cell--num',
+    render: (v) => <span style={{ fontWeight: 500 }}>{fmtMoney(v)}</span>,
+  },
+  {
+    key: '_actions',
+    label: '',
+    width: 48,
+    className: 'x-cell--actions',
+    render: () => <IconButton icon="edit" title="Edit expense" />,
+  },
+];
+
 const ExpensesGrid = () => {
-  const [search, setSearch] = React.useState('');
-  const filtered = SAMPLE_EXPENSES.filter(
-    (e) => !search || e.expense.toLowerCase().includes(search.toLowerCase()),
-  );
-  const total = filtered.reduce((s, e) => s + e.amount, 0);
+  const gf = _W.useGridFilters({ rows: SAMPLE_EXPENSES, filterFields: [] });
+  const [sort, setSort] = React.useState({ key: 'date', dir: 'asc' });
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(20);
+
+  const total = gf.filteredRows.reduce((s, e) => s + e.amount, 0);
+  const displayRows = gf.filteredRows.slice((page - 1) * pageSize, page * pageSize);
+
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--sp-group)',
-      }}
-    >
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-        <div style={{ position: 'relative', width: 280 }}>
-          <span
-            style={{
-              position: 'absolute',
-              left: 10,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: 'var(--fg-3)',
-              pointerEvents: 'none',
-            }}
-          >
-            <Icon name="search" size={14} />
+    <_W.DataGrid
+      columns={EXPENSE_COLUMNS}
+      rows={displayRows}
+      sort={sort}
+      onSortChange={setSort}
+      className="x-grid-wrap--flat"
+      toolbar={
+        <>
+          <_W.GridSearchInput {...gf.searchProps} placeholder="Search expenses…" />
+          <div className="x-grid-toolbar__spacer" />
+          <span className="x-grid-toolbar__count">
+            {gf.filteredCount} expenses · {fmtMoney(total)}
           </span>
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search expenses..."
-            style={{ paddingLeft: 32, height: 34 }}
-          />
-        </div>
-        <div style={{ flex: 1 }} />
-        <span className="x-grid-toolbar__count">
-          {filtered.length} expenses · {fmtMoney(total)}
-        </span>
-        <Button variant="secondary" size="sm" icon="plus">
-          Add expense
-        </Button>
-      </div>
-      <div className="x-grid-wrap" style={{ boxShadow: 'none' }}>
-        <table className="x-grid">
-          <thead>
-            <tr>
-              <th style={{ width: 120 }}>Date</th>
-              <th>Expenses</th>
-              <th style={{ width: 130, textAlign: 'right' }}>Amount</th>
-              <th className="x-cell--actions"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((e) => (
-              <tr key={e.id}>
-                <td style={{ color: 'var(--fg-2)' }}>{fmtDate(e.date)}</td>
-                <td>{e.expense}</td>
-                <td className="x-cell--num" style={{ fontWeight: 500 }}>
-                  {fmtMoney(e.amount)}
-                </td>
-                <td className="x-cell--actions">
-                  <IconButton icon="more" />
-                </td>
-              </tr>
-            ))}
-            {filtered.length === 0 && (
-              <tr>
-                <td
-                  colSpan={4}
-                  style={{
-                    textAlign: 'center',
-                    padding: 24,
-                    color: 'var(--fg-3)',
-                  }}
-                >
-                  No expenses match "{search}"
-                </td>
-              </tr>
-            )}
-          </tbody>
-          <tfoot>
-            <tr style={{ background: 'var(--n-50)', fontWeight: 500 }}>
-              <td
-                colSpan={2}
-                style={{
-                  textAlign: 'right',
-                  padding: '10px 12px',
-                  color: 'var(--fg-2)',
-                }}
-              >
-                Total
-              </td>
-              <td
-                className="x-cell--num"
-                style={{
-                  padding: '10px 12px',
-                  fontFamily: 'var(--font-display)',
-                  fontSize: 'var(--fs-lg)',
-                }}
-              >
-                {fmtMoney(total)}
-              </td>
-              <td></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontSize: 'var(--fs-xs)',
-          color: 'var(--fg-3)',
-        }}
-      >
-        <span>
-          Showing 1–{filtered.length} of {filtered.length}
-        </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span>Rows per page</span>
-          <select
-            className="x-input"
-            style={{
-              width: 60,
-              height: 26,
-              fontSize: 'var(--fs-xs)',
-              padding: '0 6px',
-            }}
-          >
-            <option>20</option>
-            <option>50</option>
-          </select>
-          <span>Page 1 of 1</span>
-          <div style={{ display: 'flex', gap: 2 }}>
-            <button
-              disabled
-              style={{
-                all: 'unset',
-                width: 24,
-                height: 24,
-                display: 'grid',
-                placeItems: 'center',
-                borderRadius: 'var(--radius-sm)',
-                color: 'var(--fg-4)',
-                cursor: 'not-allowed',
-              }}
-            >
-              «
-            </button>
-            <button
-              disabled
-              style={{
-                all: 'unset',
-                width: 24,
-                height: 24,
-                display: 'grid',
-                placeItems: 'center',
-                borderRadius: 'var(--radius-sm)',
-                color: 'var(--fg-4)',
-                cursor: 'not-allowed',
-              }}
-            >
-              ‹
-            </button>
-            <button
-              disabled
-              style={{
-                all: 'unset',
-                width: 24,
-                height: 24,
-                display: 'grid',
-                placeItems: 'center',
-                borderRadius: 'var(--radius-sm)',
-                color: 'var(--fg-4)',
-                cursor: 'not-allowed',
-              }}
-            >
-              ›
-            </button>
-            <button
-              disabled
-              style={{
-                all: 'unset',
-                width: 24,
-                height: 24,
-                display: 'grid',
-                placeItems: 'center',
-                borderRadius: 'var(--radius-sm)',
-                color: 'var(--fg-4)',
-                cursor: 'not-allowed',
-              }}
-            >
-              »
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+      footer={
+        <_W.DataGridPagination
+          totalRows={gf.filteredCount}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(ps) => { setPageSize(ps); setPage(1); }}
+        />
+      }
+    />
   );
 };
 
@@ -2105,22 +1972,104 @@ const LineRowMenu = ({ lineId, onHistory, onDelete }) => {
   );
 };
 
-// LineItemsGrid — full line items table with edit/comment/more actions per row
+// LineItemsGrid — full line items table using shared DataGrid
+const _W = new Proxy({}, { get: (_, k) => window[k] });
+
+const makeLineItemColumns = (setDrawer) => [
+  {
+    key: 'date',
+    label: 'Date',
+    sortable: true,
+    width: 90,
+    render: (v) => <span style={{ color: 'var(--fg-2)' }}>{fmtDate(v)}</span>,
+  },
+  {
+    key: 'tk',
+    label: 'Timekeeper',
+    sortable: true,
+    width: 140,
+    render: (_, r) => (
+      <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.3 }}>
+        <span>{r.tk}</span>
+        <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)' }}>{r.lvl}</span>
+      </div>
+    ),
+  },
+  { key: 'task', label: 'Task', sortable: true, width: 70, className: 'x-cell--mono' },
+  { key: 'act', label: 'Activity', sortable: true, width: 70, className: 'x-cell--mono' },
+  {
+    key: 'desc',
+    label: 'Description',
+    wrap: true,
+    render: (v, r) => (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '4px 0' }}>
+        <span>{v}</span>
+        {r.flags.length > 0 && (
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            {r.flags.map((f) => <FlagTag key={f} kind={f} />)}
+          </div>
+        )}
+      </div>
+    ),
+  },
+  {
+    key: 'hrs',
+    label: 'Hours',
+    sortable: true,
+    width: 60,
+    align: 'right',
+    className: 'x-cell--num',
+    render: (v) => v.toFixed(1),
+  },
+  {
+    key: 'rate',
+    label: 'Rate',
+    sortable: true,
+    width: 80,
+    align: 'right',
+    className: 'x-cell--num',
+    render: (v) => <span style={{ color: 'var(--fg-2)' }}>{fmtMoney(v)}</span>,
+  },
+  {
+    key: 'amount',
+    label: 'Amount',
+    sortable: true,
+    width: 110,
+    align: 'right',
+    className: 'x-cell--num',
+    render: (v) => <span style={{ fontWeight: 500 }}>{fmtMoney(v)}</span>,
+  },
+  {
+    key: '_actions',
+    label: '',
+    width: 120,
+    className: 'x-cell--actions',
+    render: (_, r) => (
+      <div style={{ display: 'inline-flex', gap: 2 }}>
+        <IconButton icon="edit" title="Edit line item" />
+        <IconButton icon="comment" title="Comments" onClick={() => setDrawer('comments')} />
+        <LineRowMenu lineId={r.id} onHistory={() => setDrawer('history')} onDelete={() => {}} />
+      </div>
+    ),
+  },
+];
+
 const LineItemsGrid = ({ fullWidth }) => {
   const [selected, setSelected] = React.useState(new Set());
-  const [drawer, setDrawer] = React.useState(null); // 'comments' | 'history' | null
+  const [drawer, setDrawer] = React.useState(null);
+  const [sort, setSort] = React.useState({ key: 'date', dir: 'asc' });
+  const [columns, setColumns] = React.useState(() => makeLineItemColumns(setDrawer));
+
   const totals = SAMPLE_LINES.reduce(
     (a, l) => ({ hrs: a.hrs + l.hrs, amt: a.amt + l.amount }),
     { hrs: 0, amt: 0 },
   );
+
+  const allSelected = selected.size === SAMPLE_LINES.length && selected.size > 0;
+  const someSelected = selected.size > 0 && !allSelected;
+
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--sp-section)',
-      }}
-    >
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-section)' }}>
       <div
         style={{
           display: 'flex',
@@ -2132,185 +2081,41 @@ const LineItemsGrid = ({ fullWidth }) => {
           border: '1px solid #e8d4a8',
         }}
       >
-        <Icon
-          name="alertCircle"
-          size={14}
-          style={{ color: 'var(--warn-500)' }}
-        />
-        <span
-          style={{
-            fontSize: 'var(--fs-sm)',
-            color: 'var(--warn-700)',
-            fontWeight: 500,
-          }}
-        >
+        <Icon name="alertCircle" size={14} style={{ color: 'var(--warn-500)' }} />
+        <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--warn-700)', fontWeight: 500 }}>
           4 line items flagged by policy rules
         </span>
         <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--warn-700)' }}>
           · Block billing (2) · Rate mismatch (1) · Vague description (1)
         </span>
         <div style={{ flex: 1 }} />
-        <Button variant="ghost" size="sm">
-          Review flags
-        </Button>
+        <Button variant="ghost" size="sm">Review flags</Button>
       </div>
-      <div className="x-grid-wrap" style={{ boxShadow: 'none' }}>
-        <div className="x-grid-toolbar">
-          <Button variant="secondary" size="sm" icon="filter">
-            Filter
-          </Button>
-          <Button variant="ghost" size="sm" icon="sparkles">
-            AI audit
-          </Button>
-          <div className="x-grid-toolbar__spacer" />
-          <span className="x-grid-toolbar__count">
-            {SAMPLE_LINES.length} lines · {totals.hrs.toFixed(1)}h ·{' '}
-            {fmtMoney(totals.amt)}
-          </span>
-          <Button variant="secondary" size="sm" icon="download">
-            Export
-          </Button>
-        </div>
-        <div className="x-grid-scroll">
-          <table className="x-grid">
-            <thead>
-              <tr>
-                <th className="x-cell--checkbox">
-                  <Checkbox />
-                </th>
-                <th style={{ width: 90 }}>Date</th>
-                <th style={{ width: 140 }}>Timekeeper</th>
-                <th style={{ width: 70 }}>Task</th>
-                <th style={{ width: 70 }}>Activity</th>
-                <th>Description</th>
-                <th style={{ width: 60, textAlign: 'right' }}>Hours</th>
-                <th style={{ width: 80, textAlign: 'right' }}>Rate</th>
-                <th style={{ width: 110, textAlign: 'right' }}>Amount</th>
-                <th className="x-cell--actions" style={{ width: 90 }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {SAMPLE_LINES.map((l) => (
-                <tr
-                  key={l.id}
-                  className={cls(selected.has(l.id) && 'is-selected')}
-                >
-                  <td className="x-cell--checkbox">
-                    <Checkbox
-                      checked={selected.has(l.id)}
-                      onChange={() => {
-                        const n = new Set(selected);
-                        n.has(l.id) ? n.delete(l.id) : n.add(l.id);
-                        setSelected(n);
-                      }}
-                    />
-                  </td>
-                  <td style={{ color: 'var(--fg-2)' }}>{fmtDate(l.date)}</td>
-                  <td>
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        lineHeight: 1.3,
-                      }}
-                    >
-                      <span>{l.tk}</span>
-                      <span
-                        style={{
-                          fontSize: 'var(--fs-xs)',
-                          color: 'var(--fg-3)',
-                        }}
-                      >
-                        {l.lvl}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="x-cell--mono">{l.task}</td>
-                  <td className="x-cell--mono">{l.act}</td>
-                  <td
-                    style={{
-                      whiteSpace: 'normal',
-                      maxWidth: fullWidth ? 480 : 340,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 4,
-                        padding: '8px 0',
-                      }}
-                    >
-                      <span>{l.desc}</span>
-                      {l.flags.length > 0 && (
-                        <div
-                          style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}
-                        >
-                          {l.flags.map((f) => (
-                            <FlagTag key={f} kind={f} />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="x-cell--num">{l.hrs.toFixed(1)}</td>
-                  <td className="x-cell--num" style={{ color: 'var(--fg-2)' }}>
-                    {fmtMoney(l.rate)}
-                  </td>
-                  <td className="x-cell--num" style={{ fontWeight: 500 }}>
-                    {fmtMoney(l.amount)}
-                  </td>
-                  <td className="x-cell--actions">
-                    <div style={{ display: 'inline-flex', gap: 2 }}>
-                      <IconButton icon="edit" title="Edit line item" />
-                      <IconButton
-                        icon="comment"
-                        title="Comments"
-                        onClick={() => setDrawer('comments')}
-                      />
-                      <LineRowMenu
-                        lineId={l.id}
-                        onHistory={() => setDrawer('history')}
-                        onDelete={() => {}}
-                      />
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr style={{ background: 'var(--n-50)', fontWeight: 500 }}>
-                <td
-                  colSpan={6}
-                  style={{
-                    textAlign: 'right',
-                    padding: '10px 12px',
-                    color: 'var(--fg-2)',
-                  }}
-                >
-                  Subtotal
-                </td>
-                <td className="x-cell--num" style={{ padding: '10px 12px' }}>
-                  {totals.hrs.toFixed(1)}
-                </td>
-                <td></td>
-                <td
-                  className="x-cell--num"
-                  style={{
-                    padding: '10px 12px',
-                    fontFamily: 'var(--font-display)',
-                    fontSize: 'var(--fs-lg)',
-                  }}
-                >
-                  {fmtMoney(totals.amt)}
-                </td>
-                <td></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
-      {/* Comments or History drawer */}
+
+      <_W.DataGrid
+        columns={columns}
+        rows={SAMPLE_LINES}
+        selectable
+        selected={selected}
+        onSelectionChange={setSelected}
+        sort={sort}
+        onSortChange={setSort}
+        settingsEnabled
+        onColumnsChange={setColumns}
+        className="x-grid-wrap--flat"
+        toolbar={
+          <>
+            <Button variant="secondary" size="sm" icon="filter">Filter</Button>
+            <Button variant="ghost" size="sm" icon="sparkles">AI audit</Button>
+            <div className="x-grid-toolbar__spacer" />
+            <span className="x-grid-toolbar__count">
+              {SAMPLE_LINES.length} lines · {totals.hrs.toFixed(1)}h · {fmtMoney(totals.amt)}
+            </span>
+            <Button variant="secondary" size="sm" icon="download">Export</Button>
+          </>
+        }
+      />
+
       {drawer && <ScopedDrawer type={drawer} onClose={() => setDrawer(null)} />}
     </div>
   );

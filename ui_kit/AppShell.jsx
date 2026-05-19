@@ -177,7 +177,6 @@ const NAV_ITEMS = {
   ],
   // End menu (above user info, always visible)
   endItems: [
-    { id: 'members', label: 'Members', icon: 'users' },
     { id: 'settings', label: 'Settings', icon: 'settings' },
   ],
   // Org info (fixed at bottom of sidebar)

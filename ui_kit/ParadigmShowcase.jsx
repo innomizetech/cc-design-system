@@ -3152,7 +3152,6 @@ const UserTabsDetail = ({ onBack } = {}) => {
   const [sideWidth, setSideWidth] = React.useState(360);
   const [profileEditing, setProfileEditing] = React.useState(false);
   const [drawerOpen, setDrawerOpen] = React.useState(false);
-  const [permEditing, setPermEditing] = React.useState(false);
   const [adminNotes, setAdminNotes] = React.useState(
     'Onboarded during Q1 2024 Legal Ops expansion. Promoted to Senior Reviewer after 6-month probation.',
   );
@@ -3180,45 +3179,85 @@ const UserTabsDetail = ({ onBack } = {}) => {
   });
   const setDrawerField = (k, v) => setDrawerForm((f) => ({ ...f, [k]: v }));
 
-  // Permission groups with checkbox state
-  const [perms, setPerms] = React.useState({
-    'View all invoices': true,
-    'Review & annotate': true,
-    'Approve / reject': true,
-    'Put on hold': true,
-    Export: true,
-    'View clients': true,
-    'Manage profiles': true,
-    'Manage rate cards': true,
-    'View financial reports': true,
-    'Export reports': true,
-    'Schedule reports': true,
-    'Manage team members': true,
-    'View audit logs': true,
+  const allRoles = window.PERM_ROLES_DATA || [];
+  const [assignedRoleIds, setAssignedRoleIds] = React.useState(() => {
+    const ids = new Set();
+    allRoles.forEach((r) => { if (r.name === 'Billing clerk' || r.name === 'Supervisor') ids.add(r.id); });
+    return ids;
   });
-  const togglePerm = (k) => setPerms((p) => ({ ...p, [k]: !p[k] }));
+  const [rolePickerOpen, setRolePickerOpen] = React.useState(false);
+  const [rolePickerQ, setRolePickerQ] = React.useState('');
+  const [roleAssigning, setRoleAssigning] = React.useState(new Set());
+  const [roleDetailState, setRoleDetailState] = React.useState({});
+  const [roleDetailData, setRoleDetailData] = React.useState({});
 
-  const PERM_GROUPS = [
-    {
-      group: 'Invoices',
-      items: [
-        'View all invoices',
-        'Review & annotate',
-        'Approve / reject',
-        'Put on hold',
-        'Export',
-      ],
-    },
-    {
-      group: 'Clients',
-      items: ['View clients', 'Manage profiles', 'Manage rate cards'],
-    },
-    {
-      group: 'Reports',
-      items: ['View financial reports', 'Export reports', 'Schedule reports'],
-    },
-    { group: 'Admin', items: ['Manage team members', 'View audit logs'] },
-  ];
+  const userRoles = allRoles.filter((r) => assignedRoleIds.has(r.id));
+
+  const toggleRoleAssignment = (id) => {
+    if (assignedRoleIds.has(id)) {
+      setRoleAssigning((prev) => { const n = new Set(prev); n.add(id); return n; });
+      setTimeout(() => {
+        setAssignedRoleIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
+        setRoleDetailState((prev) => { const n = { ...prev }; delete n[id]; return n; });
+        setRoleDetailData((prev) => { const n = { ...prev }; delete n[id]; return n; });
+        setRoleAssigning((prev) => { const n = new Set(prev); n.delete(id); return n; });
+        setEpState('idle');
+        setEffectiveCaps(null);
+      }, 500);
+    } else {
+      setRoleAssigning((prev) => { const n = new Set(prev); n.add(id); return n; });
+      setTimeout(() => {
+        setAssignedRoleIds((prev) => new Set([...prev, id]));
+        setRoleAssigning((prev) => { const n = new Set(prev); n.delete(id); return n; });
+        setEpState('idle');
+        setEffectiveCaps(null);
+      }, 600);
+    }
+  };
+  const removeRole = (id) => {
+    setRoleAssigning((prev) => { const n = new Set(prev); n.add(id); return n; });
+    setTimeout(() => {
+      setAssignedRoleIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
+      setRoleDetailState((prev) => { const n = { ...prev }; delete n[id]; return n; });
+      setRoleDetailData((prev) => { const n = { ...prev }; delete n[id]; return n; });
+      setRoleAssigning((prev) => { const n = new Set(prev); n.delete(id); return n; });
+      setEpState('idle');
+      setEffectiveCaps(null);
+    }, 500);
+  };
+
+  const fetchRoleDetail = (roleId) => {
+    setRoleDetailState((p) => ({ ...p, [roleId]: 'loading' }));
+    setTimeout(() => {
+      try {
+        const role = allRoles.find((r) => r.id === roleId);
+        const caps = role && window.getRoleTotalCaps ? window.getRoleTotalCaps(role) : new Set();
+        setRoleDetailData((p) => ({ ...p, [roleId]: caps }));
+        setRoleDetailState((p) => ({ ...p, [roleId]: 'loaded' }));
+      } catch {
+        setRoleDetailState((p) => ({ ...p, [roleId]: 'error' }));
+      }
+    }, 700);
+  };
+
+  // Effective permissions — fetch on demand (simulated API call)
+  const [epState, setEpState] = React.useState('idle'); // idle | loading | loaded | error
+  const [effectiveCaps, setEffectiveCaps] = React.useState(null);
+
+  const fetchEffectivePerms = () => {
+    setEpState('loading');
+    setTimeout(() => {
+      try {
+        const s = new Set();
+        const fn = window.getRoleTotalCaps;
+        if (fn) userRoles.forEach((r) => { fn(r).forEach((c) => s.add(c)); });
+        setEffectiveCaps(s);
+        setEpState('loaded');
+      } catch {
+        setEpState('error');
+      }
+    }, 900);
+  };
 
   // Side column resize
   const onMouseDown = (e) => {
@@ -3380,7 +3419,7 @@ const UserTabsDetail = ({ onBack } = {}) => {
               items={[
                 { value: 'profile', label: 'Profile', icon: 'user' },
                 { value: 'activity', label: 'Activity', icon: 'history' },
-                { value: 'permissions', label: 'Permissions', icon: 'lock' },
+                { value: 'roles', label: 'Roles', icon: 'lock' },
                 { value: 'sessions', label: 'Sessions', icon: 'settings' },
               ]}
             />
@@ -3563,94 +3602,228 @@ const UserTabsDetail = ({ onBack } = {}) => {
               </section>
             )}
 
-            {/* Permissions Tab — Pattern C: Inline checkbox edit */}
-            {tab === 'permissions' && (
-              <EditableSection
-                title="Permissions"
-                icon="lock"
-                editing={permEditing}
-                onEdit={() => setPermEditing(true)}
-                onCancel={() => setPermEditing(false)}
-                onSave={() => setPermEditing(false)}
-              >
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns:
-                      'repeat(auto-fill, minmax(240px, 1fr))',
-                    gap: 'var(--sp-section)',
-                  }}
-                >
-                  {PERM_GROUPS.map((g) => (
-                    <div key={g.group}>
-                      <div
-                        style={{
-                          fontSize: 'var(--fs-xs)',
-                          textTransform: 'uppercase',
-                          letterSpacing: 'var(--tracking-caps)',
-                          color: 'var(--fg-3)',
-                          fontWeight: 600,
-                          marginBottom: 10,
-                        }}
-                      >
-                        {g.group}
-                      </div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 6,
-                        }}
-                      >
-                        {g.items.map((item) => (
-                          <label
-                            key={item}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 8,
-                              fontSize: 'var(--fs-sm)',
-                              color: 'var(--fg-1)',
-                              cursor: permEditing ? 'pointer' : 'default',
-                            }}
-                          >
-                            {permEditing ? (
-                              <Checkbox
-                                checked={perms[item]}
-                                onChange={() => togglePerm(item)}
-                              />
-                            ) : (
-                              <Icon
-                                name={perms[item] ? 'check' : 'x'}
-                                size={12}
-                                style={{
-                                  color: perms[item]
-                                    ? 'var(--success-500)'
-                                    : 'var(--fg-4)',
-                                }}
-                              />
+            {/* Roles Tab */}
+            {tab === 'roles' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-section)' }}>
+                {/* Assigned roles */}
+                <Card title="Assigned Roles" actions={<Badge variant="neutral">{userRoles.length} roles</Badge>}>
+                  <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)', marginBottom: 12, lineHeight: 1.5 }}>
+                    Roles determine what {USER.name.split(' ')[0]} can access. Each role bundles permission sets and individual capabilities.
+                  </div>
+
+                  {/* Role cards */}
+                  {userRoles.length === 0 && (
+                    <div style={{ padding: 24, textAlign: 'center', color: 'var(--fg-3)', fontSize: 'var(--fs-sm)', border: '1px dashed var(--border)', borderRadius: 'var(--radius-md)', marginBottom: 8 }}>
+                      No roles assigned yet. Click below to assign one.
+                    </div>
+                  )}
+                  {userRoles.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
+                      {userRoles.map((role) => {
+                        const sets = (role.permissionSets || []).map((id) => (window.PERMISSION_SETS_DATA || []).find((ps) => ps.id === id)).filter(Boolean);
+                        const rdState = roleDetailState[role.id] || 'idle';
+                        const rdCaps = roleDetailData[role.id];
+                        const isRemoving = roleAssigning.has(role.id);
+                        return (
+                          <div key={role.id} style={{ border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', overflow: 'hidden', opacity: isRemoving ? 0.5 : 1, transition: 'opacity 120ms ease' }}>
+                            <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <Icon name="lock" size={14} style={{ color: 'var(--fg-3)' }} />
+                                <span style={{ fontWeight: 500, fontSize: 'var(--fs-sm)', color: 'var(--fg-1)', flex: 1 }}>{role.name}</span>
+                                <Badge variant={role.type === 'System' ? 'info' : 'accent'}>{role.type}</Badge>
+                                {isRemoving ? <span className="x-spinner" /> : <IconButton icon="x" size="sm" title={`Remove ${role.name}`} onClick={() => removeRole(role.id)} />}
+                              </div>
+                              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)', lineHeight: 1.4 }}>{role.description}</div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)' }}>{sets.length} permission sets</span>
+                                {(role.customCapabilities || []).length > 0 && <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)' }}>{role.customCapabilities.length} custom capabilities</span>}
+                                <div style={{ flex: 1 }} />
+                                {rdState === 'idle' && (
+                                  <button type="button" onClick={() => fetchRoleDetail(role.id)} style={{ all: 'unset', cursor: 'pointer', fontSize: 'var(--fs-xs)', color: 'var(--fg-accent)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <Icon name="chevronRight" size={11} />View sets & capabilities
+                                  </button>
+                                )}
+                                {rdState === 'loading' && (
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-xs)', color: 'var(--fg-3)' }}>
+                                    <span className="x-spinner" /> Loading...
+                                  </span>
+                                )}
+                                {rdState === 'loaded' && (
+                                  <button type="button" onClick={() => setRoleDetailState((p) => ({ ...p, [role.id]: 'idle' }))} style={{ all: 'unset', cursor: 'pointer', fontSize: 'var(--fs-xs)', color: 'var(--fg-accent)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <Icon name="chevronDown" size={11} />Hide details
+                                  </button>
+                                )}
+                                {rdState === 'error' && (
+                                  <button type="button" onClick={() => fetchRoleDetail(role.id)} style={{ all: 'unset', cursor: 'pointer', fontSize: 'var(--fs-xs)', color: 'var(--error-500)', fontWeight: 500 }}>
+                                    Failed — retry
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                            {/* Loaded detail */}
+                            {rdState === 'loaded' && rdCaps && (
+                              <div style={{ borderTop: '1px solid var(--border-subtle)', background: 'var(--n-50)', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                {sets.length > 0 && (
+                                  <div>
+                                    <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 'var(--tracking-caps)', color: 'var(--fg-3)', marginBottom: 6 }}>Permission Sets</div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                      {sets.map((ps) => (
+                                        <div key={ps.id} style={{ padding: '4px 0' }}>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-sm)' }}>
+                                            <span style={{ color: 'var(--fg-1)', fontWeight: 500, flex: 1 }}>{ps.name}</span>
+                                            {ps.module && <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)' }}>{ps.module}</span>}
+                                            <Badge variant={ps.type === 'System' ? 'info' : 'accent'}>{ps.type.toLowerCase()}</Badge>
+                                            <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)' }}>{ps.capabilities.length}</span>
+                                          </div>
+                                          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)', lineHeight: 1.4, marginTop: 2 }}>{ps.description}</div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                {(role.customCapabilities || []).length > 0 && (
+                                  <div>
+                                    <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 'var(--tracking-caps)', color: 'var(--fg-3)', marginBottom: 6 }}>Custom Capabilities</div>
+                                    {role.customCapabilities.map((ck) => {
+                                      const cap = window.lookupCapability ? window.lookupCapability(ck) : null;
+                                      return (
+                                        <div key={ck} style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '3px 0', fontSize: 'var(--fs-sm)' }}>
+                                          <code style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-accent)' }}>{ck}</code>
+                                          {cap && <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)' }}>{cap.description}</span>}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                                <div>
+                                  <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 'var(--tracking-caps)', color: 'var(--fg-3)', marginBottom: 6 }}>All Capabilities ({rdCaps.size})</div>
+                                  {window.CapabilityGrid && <window.CapabilityGrid capKeys={rdCaps} />}
+                                </div>
+                              </div>
                             )}
-                            <span
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Assign role button */}
+                  <Button variant="ghost" size="sm" icon="plus" onClick={() => setRolePickerOpen(true)} style={{ width: '100%' }}>
+                    Assign role
+                  </Button>
+                </Card>
+
+                {/* Assign role sheet — multi-select with loading */}
+                {rolePickerOpen && window.InlineSheet && (
+                  <window.InlineSheet
+                    title="Assign Roles"
+                    subtitle={`Toggle roles for ${USER.name}. Changes are saved automatically.`}
+                    onClose={() => { setRolePickerOpen(false); setRolePickerQ(''); }}
+                    footer={<Button variant="accent" onClick={() => { setRolePickerOpen(false); setRolePickerQ(''); }}>Done</Button>}
+                  >
+                    <div style={{ position: 'relative' }}>
+                      <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--fg-3)', pointerEvents: 'none' }}><Icon name="search" size={14} /></span>
+                      <input className="x-input" style={{ paddingLeft: 32, height: 32, width: '100%' }} placeholder="Search roles..." value={rolePickerQ} onChange={(e) => setRolePickerQ(e.target.value)} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {(() => {
+                        const lq = rolePickerQ.toLowerCase().trim();
+                        const filtered = allRoles.filter((r) => !lq || r.name.toLowerCase().includes(lq) || r.description.toLowerCase().includes(lq));
+                        if (filtered.length === 0) return <div style={{ padding: 24, textAlign: 'center', color: 'var(--fg-3)', fontSize: 'var(--fs-sm)' }}>No roles match your search.</div>;
+                        return filtered.map((role) => {
+                          const isAssigned = assignedRoleIds.has(role.id);
+                          const isLoading = roleAssigning.has(role.id);
+                          const sets = (role.permissionSets || []).map((id) => (window.PERMISSION_SETS_DATA || []).find((ps) => ps.id === id)).filter(Boolean);
+                          return (
+                            <label
+                              key={role.id}
                               style={{
-                                color:
-                                  perms[item] || permEditing
-                                    ? 'var(--fg-1)'
-                                    : 'var(--fg-3)',
-                                textDecoration:
-                                  !perms[item] && !permEditing
-                                    ? 'line-through'
-                                    : 'none',
+                                padding: '12px 14px', border: '1px solid', borderRadius: 'var(--radius-md)',
+                                borderColor: isAssigned ? 'var(--fg-accent)' : 'var(--border-subtle)',
+                                background: isAssigned ? 'var(--a-50)' : 'transparent',
+                                cursor: isLoading ? 'wait' : 'pointer',
+                                opacity: isLoading ? 0.6 : 1,
+                                transition: 'border-color 120ms ease, background 120ms ease, opacity 120ms ease',
+                                display: 'flex', gap: 12, alignItems: 'flex-start',
                               }}
                             >
-                              {item}
-                            </span>
-                          </label>
+                              <div style={{ paddingTop: 2, flexShrink: 0 }}>
+                                {isLoading ? <span className="x-spinner" /> : <Checkbox checked={isAssigned} onChange={() => toggleRoleAssignment(role.id)} />}
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                                  <span style={{ fontWeight: 500, fontSize: 'var(--fs-sm)', color: 'var(--fg-1)', flex: 1 }}>{role.name}</span>
+                                  <Badge variant={role.type === 'System' ? 'info' : 'accent'}>{role.type}</Badge>
+                                </div>
+                                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)', lineHeight: 1.4, marginBottom: 4 }}>{role.description}</div>
+                                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                  {sets.map((ps) => <Badge key={ps.id} variant="neutral">{ps.name}</Badge>)}
+                                  {(role.customCapabilities || []).length > 0 && <Badge variant="neutral">{role.customCapabilities.length} custom</Badge>}
+                                </div>
+                              </div>
+                            </label>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </window.InlineSheet>
+                )}
+
+                {/* Effective permissions — loaded on demand */}
+                <Card
+                  title="Effective Permissions"
+                  actions={
+                    epState === 'idle' ? (
+                      <Button variant="secondary" size="sm" icon="lock" onClick={fetchEffectivePerms}>
+                        Load effective permissions
+                      </Button>
+                    ) : epState === 'loaded' ? (
+                      <Badge variant="accent">{effectiveCaps.size} capabilities</Badge>
+                    ) : null
+                  }
+                >
+                  {epState === 'idle' && (
+                    <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)', lineHeight: 1.5 }}>
+                      Effective permissions are the combined set of all capabilities from {USER.name.split(' ')[0]}'s assigned roles. Click "Load" to compute them — this requires a server call.
+                    </div>
+                  )}
+
+                  {epState === 'loading' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '8px 0' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span className="x-spinner" />
+                        <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--fg-2)' }}>Computing effective permissions across {userRoles.length} roles...</span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} style={{ height: 14, borderRadius: 'var(--radius-sm)', background: 'var(--n-50)', animation: 'x-fade-in 0.6s ease infinite alternate', animationDelay: `${i * 0.15}s`, opacity: 0.6 }} />
                         ))}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </EditableSection>
+                  )}
+
+                  {epState === 'loaded' && effectiveCaps && (
+                    <div>
+                      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)', marginBottom: 12, lineHeight: 1.5 }}>
+                        This is what {USER.name.split(' ')[0]} can actually do — the union of all capabilities from assigned roles.
+                      </div>
+                      {window.CapabilityGrid ? (
+                        <window.CapabilityGrid capKeys={effectiveCaps} />
+                      ) : (
+                        <div style={{ color: 'var(--fg-3)', fontSize: 'var(--fs-sm)' }}>Capability viewer unavailable.</div>
+                      )}
+                    </div>
+                  )}
+
+                  {epState === 'error' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center', padding: '16px 0' }}>
+                      <Icon name="x" size={20} style={{ color: 'var(--error-500)' }} />
+                      <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--fg-2)' }}>Failed to load effective permissions.</span>
+                      <Button variant="secondary" size="sm" onClick={fetchEffectivePerms}>Retry</Button>
+                    </div>
+                  )}
+                </Card>
+              </div>
             )}
 
             {/* Sessions Tab */}
@@ -4745,31 +4918,37 @@ const RoleDetail = () => (
 // =====================================================================
 // ROLE DETAIL — Tab + Side Column (Paradigm 1A) with Permission Edit
 // =====================================================================
-const RoleTabsDetail = ({ onBack } = {}) => {
+const RoleTabsDetail = ({ onBack, roleData } = {}) => {
   const [tab, setTab] = React.useState('permissions');
   const [sideTab, setSideTab] = React.useState('summary');
   const [collapsed, setCollapsed] = React.useState(false);
   const [sideWidth, setSideWidth] = React.useState(360);
-  const [permEditing, setPermEditing] = React.useState(false);
+  const [editSheetOpen, setEditSheetOpen] = React.useState(false);
 
-  const [perms, setPerms] = React.useState({
-    'View all invoices': true,
-    'Review & annotate': true,
-    'Approve / reject': true,
-    'Put on hold': true,
-    Export: true,
-    'View clients': true,
-    'Manage profiles': true,
-    'Manage rate cards': true,
-    'View financial reports': true,
-    'Export reports': true,
-    'Schedule reports': true,
-    'Manage team members': true,
-    'View audit logs': true,
-  });
-  const togglePerm = (k) => setPerms((p) => ({ ...p, [k]: !p[k] }));
+  const matchedRole = React.useMemo(() => {
+    if (roleData) return roleData;
+    const roles = window.PERM_ROLES_DATA || [];
+    return roles.find((r) => r.name === ROLE.name) || null;
+  }, [roleData]);
 
-  const PERM_GROUPS = ROLE.permissions;
+  const roleSets = React.useMemo(() => {
+    if (!matchedRole) return [];
+    return (matchedRole.permissionSets || []).map((id) => (window.PERMISSION_SETS_DATA || []).find((ps) => ps.id === id)).filter(Boolean);
+  }, [matchedRole]);
+
+  const [allCapsState, setAllCapsState] = React.useState('idle');
+  const [allCapKeys, setAllCapKeys] = React.useState(null);
+
+  const fetchAllCaps = () => {
+    setAllCapsState('loading');
+    setTimeout(() => {
+      try {
+        const caps = matchedRole && window.getRoleTotalCaps ? window.getRoleTotalCaps(matchedRole) : new Set();
+        setAllCapKeys(caps);
+        setAllCapsState('loaded');
+      } catch { setAllCapsState('error'); }
+    }, 800);
+  };
 
   const onMouseDown = (e) => {
     e.preventDefault();
@@ -4805,6 +4984,14 @@ const RoleTabsDetail = ({ onBack } = {}) => {
     { value: 'notes', label: 'Notes', icon: 'comment' },
   ];
 
+  const rd = roleData || ROLE;
+  const isSystem = (rd.type || matchedRole?.type) === 'System';
+  const roleName = rd.name || ROLE.name;
+  const roleDesc = rd.description || ROLE.description;
+  const roleType = rd.type || ROLE.type;
+  const roleMemberCount = rd.members || ROLE.memberCount;
+  const [deleteConfirm, setDeleteConfirm] = React.useState(false);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
@@ -4816,79 +5003,57 @@ const RoleTabsDetail = ({ onBack } = {}) => {
           gap: 'var(--sp-section)',
         }}
       >
+        {onBack && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-xs)', color: 'var(--fg-3)' }}>
+            <button type="button" onClick={onBack} style={{ all: 'unset', cursor: 'pointer', color: 'var(--fg-accent)', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Icon name="chevronLeft" size={11} />Roles & permissions
+            </button>
+            <span style={{ color: 'var(--fg-4)' }}>/</span>
+            <span>{roleName}</span>
+          </div>
+        )}
         {!onBack && (
-          <PageNav
-            crumbs={[
-              { label: 'Heartwood' },
-              { label: 'Roles' },
-              { label: ROLE.name },
-            ]}
-          />
+          <PageNav crumbs={[{ label: 'Settings' }, { label: 'Roles & permissions' }, { label: roleName }]} />
         )}
         <div className="x-page__head">
           <div className="x-page__title-wrap" style={{ gap: 8 }}>
-            <div
-              style={{
-                fontSize: 10,
-                textTransform: 'uppercase',
-                letterSpacing: 'var(--tracking-caps)',
-                color: 'var(--fg-3)',
-                fontWeight: 600,
-              }}
-            >
-              {ROLE.type}
+            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 'var(--tracking-caps)', color: 'var(--fg-3)', fontWeight: 600 }}>
+              {roleType}
             </div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                flexWrap: 'wrap',
-              }}
-            >
-              <span
-                style={{
-                  fontFamily: 'var(--font-display)',
-                  fontSize: 'var(--fs-2xl)',
-                  fontWeight: 500,
-                  color: 'var(--fg-1)',
-                }}
-              >
-                {ROLE.name}
-              </span>
-              <Badge variant="success" dot>
-                Active
-              </Badge>
-              <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--fg-2)' }}>
-                {ROLE.memberCount} members
-              </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-2xl)', fontWeight: 500, color: 'var(--fg-1)' }}>{roleName}</span>
+              <Badge variant="success" dot>Active</Badge>
+              <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--fg-2)' }}>{roleMemberCount} members</span>
+              {rd.key && <code style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)', background: 'var(--n-50)', padding: '2px 8px', borderRadius: 'var(--radius-sm)' }}>{rd.key}</code>}
             </div>
-            <div
-              style={{
-                fontSize: 'var(--fs-sm)',
-                color: 'var(--fg-2)',
-                marginTop: 2,
-              }}
-            >
-              {ROLE.description}
-            </div>
+            <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--fg-2)', marginTop: 2 }}>{roleDesc}</div>
+            {isSystem && <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)', marginTop: 4 }}>This is a system role managed by XTND. To customize access, create a custom role instead.</div>}
           </div>
-          <div
-            className="x-page__actions"
-            style={{ flexWrap: 'wrap', justifyContent: 'flex-end' }}
-          >
-            <Button variant="secondary" icon="more">
-              More
-            </Button>
-            <Button variant="secondary" icon="edit">
-              Edit
-            </Button>
-            <Button variant="secondary" icon="copy">
-              Duplicate
-            </Button>
+          <div className="x-page__actions" style={{ flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {!isSystem && (
+              <>
+                <Button variant="secondary" icon="edit" onClick={() => setEditSheetOpen(true)}>Edit role</Button>
+                <Button variant="secondary" icon="copy">Duplicate</Button>
+                <Button variant="danger" icon="x" onClick={() => setDeleteConfirm(true)}>Delete</Button>
+              </>
+            )}
+            {isSystem && (
+              <Button variant="secondary" icon="copy">Duplicate as custom</Button>
+            )}
           </div>
         </div>
       </div>
+      {/* Delete confirmation */}
+      {deleteConfirm && (
+        <div style={{ margin: '0 var(--sp-page-x) var(--sp-section)', padding: '12px 16px', background: 'var(--error-50)', border: '1px solid var(--error-200)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Icon name="x" size={16} style={{ color: 'var(--error-500)' }} />
+          <div style={{ flex: 1, fontSize: 'var(--fs-sm)', color: 'var(--fg-1)' }}>
+            Are you sure you want to delete <strong>{roleName}</strong>? This will remove the role from all {roleMemberCount} assigned members. This action cannot be undone.
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => setDeleteConfirm(false)}>Cancel</Button>
+          <Button variant="danger" size="sm" onClick={() => { setDeleteConfirm(false); onBack && onBack(); }}>Delete role</Button>
+        </div>
+      )}
 
       {/* Body */}
       <div style={{ display: 'flex', alignItems: 'stretch', flex: 1 }}>
@@ -4935,94 +5100,85 @@ const RoleTabsDetail = ({ onBack } = {}) => {
               gap: 'var(--sp-section)',
             }}
           >
-            {/* Permissions Tab — Pattern C */}
+            {/* Permissions Tab */}
             {tab === 'permissions' && (
-              <EditableSection
-                title="Permissions"
-                icon="lock"
-                editing={permEditing}
-                onEdit={() => setPermEditing(true)}
-                onCancel={() => setPermEditing(false)}
-                onSave={() => setPermEditing(false)}
-              >
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns:
-                      'repeat(auto-fill, minmax(240px, 1fr))',
-                    gap: 'var(--sp-section)',
-                  }}
-                >
-                  {PERM_GROUPS.map((g) => (
-                    <div key={g.group}>
-                      <div
-                        style={{
-                          fontSize: 'var(--fs-xs)',
-                          textTransform: 'uppercase',
-                          letterSpacing: 'var(--tracking-caps)',
-                          color: 'var(--fg-3)',
-                          fontWeight: 600,
-                          marginBottom: 10,
-                        }}
-                      >
-                        {g.group}
-                      </div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 6,
-                        }}
-                      >
-                        {g.items.map((item) => (
-                          <label
-                            key={item}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 8,
-                              fontSize: 'var(--fs-sm)',
-                              color: 'var(--fg-1)',
-                              cursor: permEditing ? 'pointer' : 'default',
-                            }}
-                          >
-                            {permEditing ? (
-                              <Checkbox
-                                checked={perms[item]}
-                                onChange={() => togglePerm(item)}
-                              />
-                            ) : (
-                              <Icon
-                                name={perms[item] ? 'check' : 'x'}
-                                size={12}
-                                style={{
-                                  color: perms[item]
-                                    ? 'var(--success-500)'
-                                    : 'var(--fg-4)',
-                                }}
-                              />
-                            )}
-                            <span
-                              style={{
-                                color:
-                                  perms[item] || permEditing
-                                    ? 'var(--fg-1)'
-                                    : 'var(--fg-3)',
-                                textDecoration:
-                                  !perms[item] && !permEditing
-                                    ? 'line-through'
-                                    : 'none',
-                              }}
-                            >
-                              {item}
-                            </span>
-                          </label>
-                        ))}
-                      </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-section)' }}>
+                {/* Permission sets */}
+                {roleSets.length > 0 && (
+                  <Card title="Permission Sets" actions={<Badge variant="neutral">{roleSets.length}</Badge>}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {roleSets.map((ps) => (
+                        <div key={ps.id} style={{ padding: '10px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--fs-sm)' }}>
+                            <span style={{ fontWeight: 500, color: 'var(--fg-1)', flex: 1 }}>{ps.name}</span>
+                            {ps.module && <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)' }}>{ps.module}</span>}
+                            <Badge variant={ps.type === 'System' ? 'info' : 'accent'}>{ps.type.toLowerCase()}</Badge>
+                            <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)' }}>{ps.capabilities.length} capabilities</span>
+                          </div>
+                          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)', lineHeight: 1.4, marginTop: 4 }}>{ps.description}</div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </EditableSection>
+                  </Card>
+                )}
+                {/* Custom capabilities */}
+                {matchedRole && (matchedRole.customCapabilities || []).length > 0 && (
+                  <Card title="Custom Capabilities" actions={<Badge variant="neutral">{matchedRole.customCapabilities.length}</Badge>}>
+                    <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)', marginBottom: 8, lineHeight: 1.5 }}>
+                      Individual capabilities added to this role beyond what permission sets provide.
+                    </div>
+                    {matchedRole.customCapabilities.map((ck) => {
+                      const cap = window.lookupCapability ? window.lookupCapability(ck) : null;
+                      return (
+                        <div key={ck} style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '4px 0', fontSize: 'var(--fs-sm)' }}>
+                          <code style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-accent)' }}>{ck}</code>
+                          {cap && <span style={{ color: 'var(--fg-3)', fontSize: 'var(--fs-xs)' }}>{cap.description}</span>}
+                        </div>
+                      );
+                    })}
+                  </Card>
+                )}
+                {/* All capabilities — on demand */}
+                <Card
+                  title="All Capabilities"
+                  actions={
+                    allCapsState === 'idle' ? (
+                      <Button variant="secondary" size="sm" icon="lock" onClick={fetchAllCaps}>
+                        View all capabilities
+                      </Button>
+                    ) : allCapsState === 'loaded' && allCapKeys ? (
+                      <Badge variant="accent">{allCapKeys.size} capabilities</Badge>
+                    ) : null
+                  }
+                >
+                  {allCapsState === 'idle' && (
+                    <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)', lineHeight: 1.5 }}>
+                      The effective set of all capabilities this role grants — computed from permission sets and custom capabilities combined. Click "View" to load.
+                    </div>
+                  )}
+                  {allCapsState === 'loading' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
+                      <span className="x-spinner" />
+                      <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--fg-2)' }}>Computing capabilities across {roleSets.length} permission sets...</span>
+                    </div>
+                  )}
+                  {allCapsState === 'loaded' && allCapKeys && (
+                    <div>
+                      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)', marginBottom: 12, lineHeight: 1.5 }}>
+                        The union of all capabilities from permission sets and custom capabilities.
+                      </div>
+                      {window.CapabilityGrid && <window.CapabilityGrid capKeys={allCapKeys} />}
+                    </div>
+                  )}
+                  {allCapsState === 'error' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center', padding: '16px 0' }}>
+                      <Icon name="x" size={20} style={{ color: 'var(--error-500)' }} />
+                      <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--fg-2)' }}>Failed to load capabilities.</span>
+                      <Button variant="secondary" size="sm" onClick={fetchAllCaps}>Retry</Button>
+                    </div>
+                  )}
+                </Card>
+              </div>
             )}
 
             {/* Members Tab */}
@@ -5227,6 +5383,90 @@ const RoleTabsDetail = ({ onBack } = {}) => {
           </div>
         )}
       </div>
+      {/* Edit role sheet */}
+      {editSheetOpen && window.InlineSheet && (() => {
+        const EditRoleForm = () => {
+          const [name, setName] = React.useState(ROLE.name);
+          const [description, setDescription] = React.useState(ROLE.description);
+          const [activeTab, setActiveTab] = React.useState('sets');
+          const [selectedSets, setSelectedSets] = React.useState(() => new Set(matchedRole ? matchedRole.permissionSets : []));
+          const [customCaps, setCustomCaps] = React.useState(() => new Set(matchedRole ? matchedRole.customCapabilities : []));
+          const [conditions, setConditions] = React.useState({});
+          const [setSearchQ, setSetSearchQ] = React.useState('');
+          const [capSearchQ, setCapSearchQ] = React.useState('');
+
+          const allSets = window.PERMISSION_SETS_DATA || [];
+          const disabledCaps = React.useMemo(() => {
+            const d = new Set();
+            allSets.forEach((ps) => { if (selectedSets.has(ps.id)) ps.capabilities.forEach((c) => d.add(c)); });
+            return d;
+          }, [selectedSets]);
+          const totalCaps = new Set([...disabledCaps, ...customCaps]).size;
+
+          const filteredSets = React.useMemo(() => {
+            const q = setSearchQ.toLowerCase().trim();
+            if (!q) return allSets;
+            return allSets.filter((ps) => ps.name.toLowerCase().includes(q) || ps.description.toLowerCase().includes(q));
+          }, [setSearchQ]);
+
+          return (
+            <window.InlineSheet
+              title={`Edit: ${ROLE.name}`}
+              subtitle="Update this role's permission sets and capabilities. Changes take effect immediately for all assigned members."
+              onClose={() => setEditSheetOpen(false)}
+              footer={<><Button variant="ghost" onClick={() => setEditSheetOpen(false)}>Cancel</Button><Button variant="accent" disabled={!name.trim()}>Save Changes</Button></>}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <Field label="Name" required>
+                  <Input value={name} onChange={(e) => setName(e.target.value)} />
+                </Field>
+                <Field label="Description">
+                  <Textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
+                </Field>
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                  <Segmented value={activeTab} onChange={setActiveTab} options={[{ value: 'sets', label: 'Permission Sets' }, { value: 'custom', label: 'Custom Capabilities' }]} />
+                  {totalCaps > 0 && <Badge variant="accent">{totalCaps} capabilities</Badge>}
+                </div>
+                {activeTab === 'sets' && (
+                  <div>
+                    <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)', marginBottom: 10, lineHeight: 1.5 }}>Select which permission sets this role includes.</div>
+                    <div style={{ position: 'relative', marginBottom: 10 }}>
+                      <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--fg-3)', pointerEvents: 'none' }}><Icon name="search" size={14} /></span>
+                      <input className="x-input" style={{ paddingLeft: 32, height: 30, width: '100%' }} placeholder="Filter permission sets..." value={setSearchQ} onChange={(e) => setSetSearchQ(e.target.value)} />
+                    </div>
+                    {filteredSets.map((ps) => (
+                      <label key={ps.id} className="x-perm-set-row">
+                        <Checkbox checked={selectedSets.has(ps.id)} onChange={() => { const n = new Set(selectedSets); n.has(ps.id) ? n.delete(ps.id) : n.add(ps.id); setSelectedSets(n); }} />
+                        <div className="x-perm-set-row__info">
+                          <div className="x-perm-set-row__name">{ps.name} {ps.module && <span style={{ fontWeight: 400, color: 'var(--fg-3)' }}>· {ps.module}</span>}</div>
+                          <div className="x-perm-set-row__desc">{ps.description}</div>
+                        </div>
+                        <div className="x-perm-set-row__meta">
+                          <Badge variant={ps.type === 'System' ? 'info' : 'accent'}>{ps.type.toLowerCase()}</Badge>
+                          <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)', whiteSpace: 'nowrap' }}>{ps.capabilities.length}</span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {activeTab === 'custom' && (
+                  <div>
+                    <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--fg-3)', marginBottom: 10, lineHeight: 1.5 }}>Add individual capabilities. Those from selected permission sets are locked.</div>
+                    <div style={{ position: 'relative', marginBottom: 10 }}>
+                      <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--fg-3)', pointerEvents: 'none' }}><Icon name="search" size={14} /></span>
+                      <input className="x-input" style={{ paddingLeft: 32, height: 30, width: '100%' }} placeholder="Filter capabilities..." value={capSearchQ} onChange={(e) => setCapSearchQ(e.target.value)} />
+                    </div>
+                    {window.CapabilityTree && <window.CapabilityTree selectedCaps={customCaps} onToggleCap={(k) => { const n = new Set(customCaps); n.has(k) ? n.delete(k) : n.add(k); setCustomCaps(n); }} onBulkToggle={(keys, add) => { setCustomCaps((prev) => { const n = new Set(prev); keys.forEach((k) => add ? n.add(k) : n.delete(k)); return n; }); }} conditions={conditions} onSetConditions={(k, c) => setConditions((p) => ({ ...p, [k]: c }))} searchQ={capSearchQ} disabledCaps={disabledCaps} />}
+                  </div>
+                )}
+              </div>
+            </window.InlineSheet>
+          );
+        };
+        return <EditRoleForm />;
+      })()}
     </div>
   );
 };

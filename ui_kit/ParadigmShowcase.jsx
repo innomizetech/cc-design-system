@@ -5458,7 +5458,7 @@ const RoleTabsDetail = ({ onBack, roleData } = {}) => {
                       <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--fg-3)', pointerEvents: 'none' }}><Icon name="search" size={14} /></span>
                       <input className="x-input" style={{ paddingLeft: 32, height: 30, width: '100%' }} placeholder="Filter capabilities..." value={capSearchQ} onChange={(e) => setCapSearchQ(e.target.value)} />
                     </div>
-                    {window.CapabilityTree && <window.CapabilityTree selectedCaps={customCaps} onToggleCap={(k) => { const n = new Set(customCaps); n.has(k) ? n.delete(k) : n.add(k); setCustomCaps(n); }} conditions={conditions} onSetConditions={(k, c) => setConditions((p) => ({ ...p, [k]: c }))} searchQ={capSearchQ} disabledCaps={disabledCaps} />}
+                    {window.CapabilityTree && <window.CapabilityTree selectedCaps={customCaps} onToggleCap={(k) => { const n = new Set(customCaps); n.has(k) ? n.delete(k) : n.add(k); setCustomCaps(n); }} onBulkToggle={(keys, add) => { setCustomCaps((prev) => { const n = new Set(prev); keys.forEach((k) => add ? n.add(k) : n.delete(k)); return n; }); }} conditions={conditions} onSetConditions={(k, c) => setConditions((p) => ({ ...p, [k]: c }))} searchQ={capSearchQ} disabledCaps={disabledCaps} />}
                   </div>
                 )}
               </div>

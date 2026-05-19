@@ -462,7 +462,7 @@ const ConditionsPopover = ({ capKey, currentConditions = [], onUpdate, onClose }
 
 // ---------- CapabilityTree (selection, for create sheets) --------------
 
-const CapabilityTree = ({ selectedCaps, onToggleCap, conditions = {}, onSetConditions, searchQ = '', disabledCaps }) => {
+const CapabilityTree = ({ selectedCaps, onToggleCap, onBulkToggle, conditions = {}, onSetConditions, searchQ = '', disabledCaps }) => {
   const [expanded, setExpanded] = React.useState(new Set());
   const [condPopover, setCondPopover] = React.useState(null);
   const q = searchQ.toLowerCase().trim();
@@ -486,10 +486,14 @@ const CapabilityTree = ({ selectedCaps, onToggleCap, conditions = {}, onSetCondi
     const keys = getAllCapKeys(moduleId);
     const selectable = disabledCaps ? keys.filter((k) => !disabledCaps.has(k)) : keys;
     const allSelected = selectable.every((k) => selectedCaps.has(k));
-    selectable.forEach((k) => {
-      if (allSelected && selectedCaps.has(k)) onToggleCap(k);
-      if (!allSelected && !selectedCaps.has(k)) onToggleCap(k);
-    });
+    if (onBulkToggle) {
+      onBulkToggle(selectable, !allSelected);
+    } else {
+      selectable.forEach((k) => {
+        if (allSelected && selectedCaps.has(k)) onToggleCap(k);
+        if (!allSelected && !selectedCaps.has(k)) onToggleCap(k);
+      });
+    }
   };
 
   return (
@@ -614,7 +618,7 @@ const CreateSetSheet = ({ onClose, editData }) => {
         </div>
         <SearchInput value={searchQ} onChange={setSearchQ} placeholder="Filter by name, action, or module..." />
         <div style={{ marginTop: 12 }}>
-          <CapabilityTree selectedCaps={selectedCaps} onToggleCap={onToggleCap} conditions={conditions} onSetConditions={(k, c) => setConditions((p) => ({ ...p, [k]: c }))} searchQ={searchQ} />
+          <CapabilityTree selectedCaps={selectedCaps} onToggleCap={onToggleCap} onBulkToggle={(keys, add) => { setSelectedCaps((prev) => { const n = new Set(prev); keys.forEach((k) => add ? n.add(k) : n.delete(k)); return n; }); }} conditions={conditions} onSetConditions={(k, c) => setConditions((p) => ({ ...p, [k]: c }))} searchQ={searchQ} />
         </div>
       </div>
     </InlineSheet>
@@ -705,7 +709,7 @@ const CreateRoleSheet = ({ onClose }) => {
             </div>
             <SearchInput value={capSearchQ} onChange={setCapSearchQ} placeholder="Filter by name, action, or module..." />
             <div style={{ marginTop: 12 }}>
-              <CapabilityTree selectedCaps={customCaps} onToggleCap={(k) => { const n = new Set(customCaps); n.has(k) ? n.delete(k) : n.add(k); setCustomCaps(n); }} conditions={conditions} onSetConditions={(k, c) => setConditions((p) => ({ ...p, [k]: c }))} searchQ={capSearchQ} disabledCaps={disabledCaps} />
+              <CapabilityTree selectedCaps={customCaps} onToggleCap={(k) => { const n = new Set(customCaps); n.has(k) ? n.delete(k) : n.add(k); setCustomCaps(n); }} onBulkToggle={(keys, add) => { setCustomCaps((prev) => { const n = new Set(prev); keys.forEach((k) => add ? n.add(k) : n.delete(k)); return n; }); }} conditions={conditions} onSetConditions={(k, c) => setConditions((p) => ({ ...p, [k]: c }))} searchQ={capSearchQ} disabledCaps={disabledCaps} />
             </div>
           </div>
         )}

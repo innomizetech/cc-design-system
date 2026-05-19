@@ -15,21 +15,16 @@ const useControlled = (controlled, defaultVal) => {
   ];
 };
 
-const DG_SortHeader = ({ label, sortKey, sort, onSort, align, width }) => {
+const DG_SortHeader = ({ label, sortKey, sort, onSort, align, width, resizeHandle, className: extraClass }) => {
   const active = sort && sort.key === sortKey;
   const toggle = () => {
     if (!onSort) return;
     const dir = active && sort.dir === 'asc' ? 'desc' : 'asc';
     onSort({ key: sortKey, dir });
   };
-  const iconName = active
-    ? sort.dir === 'asc'
-      ? 'sortUp'
-      : 'sortDown'
-    : 'caretDown';
   return (
     <th
-      className={cls('is-sortable', active && 'is-sorted')}
+      className={cls('is-sortable', active && 'is-sorted', extraClass)}
       onClick={toggle}
       style={{ width, textAlign: align, cursor: 'pointer' }}
     >
@@ -37,8 +32,31 @@ const DG_SortHeader = ({ label, sortKey, sort, onSort, align, width }) => {
       <span className="sort-icon">
         {active ? (sort.dir === 'asc' ? '▲' : '▼') : '▽'}
       </span>
+      {resizeHandle}
     </th>
   );
+};
+
+const DG_ResizeHandle = ({ colKey, getStartWidth, onWidthChange }) => {
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startW = getStartWidth(colKey);
+    const el = e.target;
+    el.classList.add('is-resizing');
+    const onMove = (ev) => {
+      onWidthChange(colKey, Math.max(40, startW + ev.clientX - startX));
+    };
+    const onUp = () => {
+      el.classList.remove('is-resizing');
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  };
+  return <div className="x-grid__resize-handle" onMouseDown={handleMouseDown} />;
 };
 
 const DataGrid = ({
@@ -88,6 +106,16 @@ const DataGrid = ({
 }) => {
   const getRowId = typeof rowKey === 'function' ? rowKey : (r) => r[rowKey];
   const visibleCols = columns.filter((c) => c.visible !== false);
+
+  const groupSepKeys = React.useMemo(() => {
+    const keys = new Set();
+    for (let i = 0; i < visibleCols.length - 1; i++) {
+      const cur = visibleCols[i].group;
+      const next = visibleCols[i + 1].group;
+      if (cur && cur !== next) keys.add(visibleCols[i].key);
+    }
+    return keys;
+  }, [visibleCols]);
 
   // --- Selection ---
   const [selected, setSelectedInternal] = useControlled(
@@ -187,7 +215,6 @@ const DataGrid = ({
   const totalCols = visibleCols.length + (selectable ? 1 : 0);
 
   // --- Virtual scroll ---
-  const scrollRef = React.useRef(null);
   const [scrollTop, setScrollTop] = React.useState(0);
   const handleScroll = React.useCallback((e) => {
     setScrollTop(e.target.scrollTop);
@@ -267,6 +294,42 @@ const DataGrid = ({
   // --- Built-in settings panel ---
   const [settingsOpen, setSettingsOpen] = React.useState(false);
 
+  // --- Column resizing ---
+  const tableRef = React.useRef(null);
+  const [colWidths, setColWidths] = React.useState({});
+
+  const initColWidth = (colKey) => {
+    if (colWidths[colKey]) return colWidths[colKey];
+    const col = visibleCols.find((c) => c.key === colKey);
+    if (col && col.width) return typeof col.width === 'number' ? col.width : parseInt(col.width, 10) || 120;
+    if (!tableRef.current) return 120;
+    const idx = visibleCols.findIndex((c) => c.key === colKey) + (selectable ? 1 : 0);
+    const th = tableRef.current.querySelector(`thead tr:last-child th:nth-child(${idx + 1})`);
+    return th ? th.offsetWidth : 120;
+  };
+
+  const onWidthChange = React.useCallback((colKey, width) => {
+    setColWidths((prev) => ({ ...prev, [colKey]: width }));
+  }, []);
+
+  const makeResizeHandle = (colKey) => (
+    <DG_ResizeHandle colKey={colKey} getStartWidth={initColWidth} onWidthChange={onWidthChange} />
+  );
+
+  const getColWidth = (c) => colWidths[c.key] || c.width;
+  const tableWidth = (selectable ? 36 : 0) + visibleCols.reduce((sum, c) => sum + (getColWidth(c) || 0), 0);
+
+  const colGroupCols = (
+    <colgroup>
+      {selectable && <col style={{ width: 36 }} />}
+      {visibleCols.map((c) => (
+        <col key={c.key} style={{ width: colWidths[c.key] || c.width }} />
+      ))}
+    </colgroup>
+  );
+
+  const tableStyle = visibleCols.every((c) => getColWidth(c)) ? { width: tableWidth } : undefined;
+
   return (
     <div
       className={cls(
@@ -306,14 +369,14 @@ const DataGrid = ({
         />
       )}
 
-      {/* Table */}
+      {/* Single table with sticky header */}
       <div
-        ref={scrollRef}
         className={cls('x-grid__scroll', virtualScroll && 'x-grid-vscroll')}
         style={maxHeight ? { overflow: 'auto', maxHeight } : undefined}
         onScroll={virtualScroll ? handleScroll : undefined}
       >
-        <table className="x-grid">
+        <table className="x-grid" ref={tableRef} style={tableStyle}>
+          {colGroupCols}
           <thead>
             {renderHeaderGroups()}
             <tr>
@@ -326,8 +389,9 @@ const DataGrid = ({
                   />
                 </th>
               )}
-              {visibleCols.map((c) =>
-                c.sortable ? (
+              {visibleCols.map((c) => {
+                const sep = groupSepKeys.has(c.key);
+                return c.sortable ? (
                   <DG_SortHeader
                     key={c.key}
                     label={c.label}
@@ -335,19 +399,22 @@ const DataGrid = ({
                     sort={effectiveSort}
                     onSort={handleSort}
                     align={c.align}
-                    width={c.width}
+                    resizeHandle={makeResizeHandle(c.key)}
+                    className={sep ? 'x-grid__group-sep' : undefined}
                   />
                 ) : (
                   <th
                     key={c.key}
-                    style={{ width: c.width, textAlign: c.align }}
+                    className={sep ? 'x-grid__group-sep' : undefined}
+                    style={{ textAlign: c.align }}
                   >
                     {c.headerRender
                       ? c.headerRender(c, effectiveSort)
                       : c.label}
+                    {makeResizeHandle(c.key)}
                   </th>
-                ),
-              )}
+                );
+              })}
             </tr>
           </thead>
           <tbody>
@@ -430,8 +497,8 @@ const DataGrid = ({
                   {visibleCols.map((c) => (
                     <td
                       key={c.key}
-                      className={c.className}
-                      style={{ textAlign: c.align, width: c.width }}
+                      className={cls(c.className, c.wrap && 'x-cell--wrap', groupSepKeys.has(c.key) && 'x-grid__group-sep')}
+                      style={{ textAlign: c.align }}
                     >
                       {c.render ? c.render(r[c.key], r, idx) : r[c.key]}
                     </td>

@@ -5,24 +5,27 @@
 
 /* --- Header group row ---------------------------------------------------- */
 .x-grid__header-group th {
+  height: var(--row-h-header);
   border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
   font-weight: var(--fw-medium);
   text-transform: none;
   letter-spacing: normal;
   font-size: var(--fs-sm);
   color: var(--fg-2);
   text-align: center;
-  padding: var(--sp-1) var(--cell-pad-x);
+  padding: 0 var(--cell-pad-x);
   background: var(--n-50);
-  position: sticky;
-  top: 0;
-  z-index: 2;
 }
-.x-grid__header-group th.x-grid__header-group--empty {
-  border-bottom-color: transparent;
+.x-grid--has-groups thead th {
+  text-align: center;
 }
-.x-grid--has-groups thead tr:nth-child(2) th {
-  top: var(--row-h-header);
+.x-grid__header-group th:last-child {
+  border-right: none;
+}
+th.x-grid__group-sep,
+td.x-grid__group-sep {
+  border-right: 1px solid var(--border-subtle);
 }
 
 /* --- Row group header ---------------------------------------------------- */

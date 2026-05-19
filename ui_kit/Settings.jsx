@@ -1,4 +1,4 @@
-/* global React, Icon, Button, IconButton, Badge, Avatar, Card, Checkbox, Field, Input, Segmented, cls, fmtDate */
+/* global React, Icon, Button, IconButton, Badge, Avatar, Card, Checkbox, Field, Input, Segmented, cls, fmtDate, RolesPermissionsPage, RoleTabsDetail, DetailDrawer */
 
 // ======================================================================
 // Settings — nested page with secondary sidebar.
@@ -48,7 +48,7 @@ const SETTINGS_NAV = [
     group: 'Security',
     items: [
       { id: 'members', label: 'Members', icon: 'users' },
-      { id: 'roles', label: 'Roles', icon: 'lock' },
+      { id: 'roles-permissions', label: 'Roles & permissions', icon: 'lock' },
       { id: 'api', label: 'API keys', icon: 'lock' },
       { id: 'audit', label: 'Audit log', icon: 'history' },
     ],
@@ -323,6 +323,7 @@ const DataTablePage = ({
   columns,
   rows,
   primaryAction = 'Add',
+  onPrimaryAction,
   searchPlaceholder = 'Search…',
   footerCount,
   bulkActionMode = 'floating',
@@ -423,7 +424,7 @@ const DataTablePage = ({
             <Button variant="secondary" icon="download">
               Export
             </Button>
-            <Button variant="accent" icon="plus">
+            <Button variant="accent" icon="plus" onClick={onPrimaryAction}>
               {primaryAction}
             </Button>
           </div>
@@ -1305,152 +1306,6 @@ const MembersPage = ({ onOpen }) => {
   );
 };
 
-// ---------- Roles page -------------------------------------------------
-const ROLES_DATA = [
-  {
-    id: 1,
-    name: 'Admin',
-    type: 'System',
-    description: 'Full access to all features, settings and member management.',
-    members: 2,
-    permissions: 24,
-    updatedAt: '2026-04-22',
-  },
-  {
-    id: 2,
-    name: 'Billing Reviewer',
-    type: 'Custom',
-    description:
-      'Review, annotate and approve invoices. No access to billing rates or trust.',
-    members: 5,
-    permissions: 12,
-    updatedAt: '2026-04-18',
-  },
-  {
-    id: 3,
-    name: 'Billing Attorney',
-    type: 'Custom',
-    description: 'Create and submit pre-bills, view matters and rate cards.',
-    members: 3,
-    permissions: 14,
-    updatedAt: '2026-03-10',
-  },
-  {
-    id: 4,
-    name: 'Matter Manager',
-    type: 'Custom',
-    description:
-      'Full matter lifecycle management including budgets and timekeepers.',
-    members: 2,
-    permissions: 16,
-    updatedAt: '2026-04-05',
-  },
-  {
-    id: 5,
-    name: 'Partner',
-    type: 'Custom',
-    description:
-      'Senior review and override authority. Read access to all modules.',
-    members: 4,
-    permissions: 18,
-    updatedAt: '2026-02-28',
-  },
-  {
-    id: 6,
-    name: 'Read-only',
-    type: 'System',
-    description: 'View-only access across all modules. Cannot modify any data.',
-    members: 3,
-    permissions: 6,
-    updatedAt: '2025-12-15',
-  },
-  {
-    id: 7,
-    name: 'Vendor Portal',
-    type: 'System',
-    description:
-      'External vendor access for bill submission and status tracking.',
-    members: 12,
-    permissions: 4,
-    updatedAt: '2025-11-20',
-  },
-];
-
-const RolesPage = ({ onOpen }) => (
-  <DataTablePage
-    title="Roles"
-    description="Define roles that control what members can see and do. System roles cannot be modified. Custom roles can be tailored to your workflow."
-    primaryAction="New role"
-    searchPlaceholder="Search roles…"
-    footerCount="roles"
-    columns={[
-      {
-        key: 'name',
-        label: 'Role name',
-        render: (r) => (
-          <div>
-            <a
-              className="x-link"
-              style={{ fontWeight: 500, cursor: 'pointer' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpen(r);
-              }}
-            >
-              {r.name}
-            </a>
-            <div
-              style={{
-                fontSize: 'var(--fs-xs)',
-                color: 'var(--fg-3)',
-                marginTop: 2,
-                maxWidth: 320,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {r.description}
-            </div>
-          </div>
-        ),
-      },
-      {
-        key: 'type',
-        label: 'Type',
-        width: 120,
-        render: (r) => (
-          <Badge variant={r.type === 'System' ? 'info' : 'accent'}>
-            {r.type}
-          </Badge>
-        ),
-      },
-      {
-        key: 'members',
-        label: 'Members',
-        width: 100,
-        align: 'right',
-        render: (r) => <span className="x-num">{r.members}</span>,
-      },
-      {
-        key: 'permissions',
-        label: 'Permissions',
-        width: 120,
-        align: 'right',
-        render: (r) => <span className="x-num">{r.permissions}</span>,
-      },
-      {
-        key: 'updatedAt',
-        label: 'Last updated',
-        width: 140,
-        muted: true,
-        render: (r) => <span>{fmtDate(r.updatedAt)}</span>,
-      },
-    ]}
-    rows={ROLES_DATA}
-  />
-);
-
 // ---------- Generic placeholder for pages we haven't fleshed out ----
 const SettingsPlaceholder = ({ title }) => (
   <div
@@ -1503,7 +1358,8 @@ const SettingsHub = ({ breadcrumbs }) => {
 
   const openMemberDetail = (row) =>
     setDetailView({ type: 'member', data: row });
-  const openRoleDetail = (row) => setDetailView({ type: 'role', data: row });
+  const openRoleDetail = (row) =>
+    setDetailView({ type: 'role', data: row });
   const closeDetail = () => setDetailView(null);
 
   React.useEffect(() => {
@@ -1612,18 +1468,11 @@ const SettingsHub = ({ breadcrumbs }) => {
         {page === 'members' && detailView?.type === 'member' && (
           <UserTabsDetail onBack={closeDetail} />
         )}
-        {page === 'roles' && (
-          <>
-            <RolesPage onOpen={openRoleDetail} />
-            <DetailDrawer
-              open={!!detailView && detailView.type === 'role'}
-              onClose={closeDetail}
-              title={detailView?.data?.name}
-              subtitle={detailView?.data?.description}
-            >
-              <RoleTabsDetail onBack={closeDetail} />
-            </DetailDrawer>
-          </>
+        {page === 'roles-permissions' && !detailView && (
+          <RolesPermissionsPage onOpenRole={openRoleDetail} />
+        )}
+        {page === 'roles-permissions' && detailView?.type === 'role' && (
+          <RoleTabsDetail onBack={closeDetail} roleData={detailView.data} />
         )}
         {![
           'overview',
@@ -1632,7 +1481,7 @@ const SettingsHub = ({ breadcrumbs }) => {
           'rate-cards',
           'ledes-task',
           'members',
-          'roles',
+          'roles-permissions',
         ].includes(page) && <SettingsPlaceholder title={title} />}
       </div>
     </div>

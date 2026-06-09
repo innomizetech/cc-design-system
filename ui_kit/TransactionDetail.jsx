@@ -694,11 +694,11 @@ const BillTab = ({ tx }) => {
       })()}
 
       <div style={{ marginTop: 'var(--sp-group)' }}>
-        <LineItemsGrid />
+        <LineItemsGrid readOnly />
       </div>
 
       <div style={{ marginTop: 'var(--sp-group)' }}>
-        <ExpensesGrid />
+        <ExpensesGrid readOnly />
       </div>
     </div>
   );

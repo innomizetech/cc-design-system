@@ -549,14 +549,10 @@
                   }
                 />
               )}
-              {(screen === 'transactions' || screen === 'txnDetail') &&
+              {screen === 'transactions' &&
                 (() => {
                   const openTxn = (row) => {
                     setTxn(row);
-                    if (recordOpenMode === 'page') {
-                      setScreen('txnDetail');
-                      setCurrent('txnDetail');
-                    }
                   };
                   const txnList = SAMPLE_TRANSACTIONS;
                   const txnIdx = txn ? txnList.findIndex((r) => r.id === txn.id) : -1;
@@ -572,50 +568,24 @@
                     hasNext: txnIdx >= 0 && txnIdx < txnList.length - 1,
                   };
 
-                  if (screen === 'txnDetail' && txn) {
-                    return (
-                      <TransactionDetailContent
-                        tx={txn}
-                        onBack={() => navigate('transactions')}
-                        breadcrumbs={crumbs}
-                        isFullPage
-                        {...txnNavProps}
-                      />
-                    );
-                  }
-
-                  if (recordOpenMode === 'panel') {
-                    return (
-                      <TxnPanelLayout
-                        crumbs={crumbs}
-                        txn={txn}
-                        openTxn={openTxn}
-                        closeTxn={() => setTxn(null)}
-                        txnNavProps={txnNavProps}
-                      />
-                    );
-                  }
-
                   return (
                     <>
                       <div className="x-page">
                         <PageHeader crumbs={crumbs} sub="Monitor and manage invoice automation transactions" />
                         <TransactionGrid onOpen={openTxn} />
                       </div>
-                      {recordOpenMode === 'drawer' && (
-                        <DetailDrawer
-                          open={!!txn}
-                          onClose={() => setTxn(null)}
-                        >
-                          {txn && (
-                            <TransactionDetailContent
-                              tx={txn}
-                              onBack={() => setTxn(null)}
-                              {...txnNavProps}
-                            />
-                          )}
-                        </DetailDrawer>
-                      )}
+                      <DetailDrawer
+                        open={!!txn}
+                        onClose={() => setTxn(null)}
+                      >
+                        {txn && (
+                          <TransactionDetailContent
+                            tx={txn}
+                            onBack={() => setTxn(null)}
+                            {...txnNavProps}
+                          />
+                        )}
+                      </DetailDrawer>
                     </>
                   );
                 })()
@@ -768,7 +738,6 @@
                 'invoices-all',
                 'detail',
                 'transactions',
-                'txnDetail',
                 'bills',
                 'bills-draft',
                 'bills-submitted',

@@ -1607,7 +1607,7 @@ const EXPENSE_COLUMNS = [
   },
 ];
 
-const ExpensesGrid = () => {
+const ExpensesGrid = ({ readOnly }) => {
   const gf = _W.useGridFilters({ rows: SAMPLE_EXPENSES, filterFields: [] });
   const [sort, setSort] = React.useState({ key: 'date', dir: 'asc' });
   const [page, setPage] = React.useState(1);
@@ -1618,7 +1618,7 @@ const ExpensesGrid = () => {
 
   return (
     <_W.DataGrid
-      columns={EXPENSE_COLUMNS}
+      columns={readOnly ? EXPENSE_COLUMNS.filter((c) => c.key !== '_actions') : EXPENSE_COLUMNS}
       rows={displayRows}
       sort={sort}
       onSortChange={setSort}
@@ -2054,11 +2054,14 @@ const makeLineItemColumns = (setDrawer) => [
   },
 ];
 
-const LineItemsGrid = ({ fullWidth }) => {
+const LineItemsGrid = ({ fullWidth, readOnly }) => {
   const [selected, setSelected] = React.useState(new Set());
   const [drawer, setDrawer] = React.useState(null);
   const [sort, setSort] = React.useState({ key: 'date', dir: 'asc' });
-  const [columns, setColumns] = React.useState(() => makeLineItemColumns(setDrawer));
+  const [columns, setColumns] = React.useState(() => {
+    const cols = makeLineItemColumns(setDrawer);
+    return readOnly ? cols.filter((c) => c.key !== '_actions') : cols;
+  });
 
   const totals = SAMPLE_LINES.reduce(
     (a, l) => ({ hrs: a.hrs + l.hrs, amt: a.amt + l.amount }),

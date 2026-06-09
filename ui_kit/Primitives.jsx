@@ -397,21 +397,23 @@ const DetailDrawer = ({
     <>
       <div className="x-detail-drawer__scrim" onClick={onClose} />
       <div className="x-detail-drawer">
-        <div className="x-detail-drawer__header">
-          <div className="x-nav-arrows" style={{ flex: 'none' }}>
-            <button type="button" onClick={onClose} title="Close">
-              <Icon name="chevronLeft" size={14} />
-            </button>
+        {(title || subtitle || actions) ? (
+          <div className="x-detail-drawer__header">
+            <div className="x-nav-arrows" style={{ flex: 'none' }}>
+              <button type="button" onClick={onClose} title="Close">
+                <Icon name="chevronLeft" size={14} />
+              </button>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {title && <div className="x-detail-drawer__title">{title}</div>}
+              {subtitle && (
+                <div className="x-detail-drawer__subtitle">{subtitle}</div>
+              )}
+            </div>
+            {actions && <div className="x-detail-drawer__actions">{actions}</div>}
+            <IconButton icon="x" onClick={onClose} />
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            {title && <div className="x-detail-drawer__title">{title}</div>}
-            {subtitle && (
-              <div className="x-detail-drawer__subtitle">{subtitle}</div>
-            )}
-          </div>
-          {actions && <div className="x-detail-drawer__actions">{actions}</div>}
-          <IconButton icon="x" onClick={onClose} />
-        </div>
+        ) : null}
         <div className="x-detail-drawer__body">{children}</div>
       </div>
     </>

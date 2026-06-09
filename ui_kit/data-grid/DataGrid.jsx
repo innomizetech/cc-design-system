@@ -86,6 +86,7 @@ const DataGrid = ({
   defaultExpanded = 'all',
 
   onRowClick,
+  renderSubRows,
   rowClassName,
 
   toolbar,
@@ -473,7 +474,7 @@ const DataGrid = ({
               const r = item.row;
               const id = getRowId(r);
               const isSelected = effectiveSelected.has(id);
-              return (
+              const rowEl = (
                 <tr
                   key={id}
                   className={cls(
@@ -505,6 +506,10 @@ const DataGrid = ({
                   ))}
                 </tr>
               );
+
+              const subContent = renderSubRows ? renderSubRows(r, visibleCols, { selectable, totalCols }) : null;
+              if (subContent) return React.createElement(React.Fragment, { key: id }, rowEl, subContent);
+              return rowEl;
             })}
 
             {/* Virtual scroll bottom spacer */}

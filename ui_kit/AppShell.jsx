@@ -76,9 +76,18 @@ const NAV_ITEMS = {
           count: 128,
           activeFor: ['invoices', 'detail'],
         },
-        { id: 'bills', label: 'Vendor bills', icon: 'vendor', count: 10 },
-        { id: 'approvals', label: 'Approvals', icon: 'approval', count: 7 },
-        { id: 'workflows', label: 'Workflows', icon: 'workflow' },
+        {
+          id: 'bills',
+          label: 'Vendor bills',
+          icon: 'vendor',
+          count: 10,
+          activeFor: ['bills', 'bills-draft', 'bills-submitted', 'bills-v2', 'billDetail'],
+          children: [
+            { id: 'bills', label: 'Standard', navigateTo: 'bills' },
+            { id: 'bills-v2', label: 'Enhanced', navigateTo: 'bills-v2' },
+          ],
+        },
+        { id: 'transactions', label: 'Transactions', icon: 'workflow', count: 24 },
       ],
     },
     {
@@ -118,6 +127,7 @@ const NAV_ITEMS = {
             'ps-tabs',
             'ps-1a',
             'ps-1b',
+            'ps-vendor-bill-tabs',
             'ps-matter',
             'ps-user-tabs',
             'ps-role-tabs',
@@ -125,6 +135,7 @@ const NAV_ITEMS = {
           children: [
             { id: 'ps-1a', label: 'Invoice', navigateTo: 'ps-1a' },
             { id: 'ps-1b', label: 'Invoice (Full Width)', navigateTo: 'ps-1b' },
+            { id: 'ps-vendor-bill-tabs', label: 'Vendor Bill', navigateTo: 'ps-vendor-bill-tabs' },
             { id: 'ps-matter', label: 'Matter', navigateTo: 'ps-matter' },
             { id: 'ps-user-tabs', label: 'User', navigateTo: 'ps-user-tabs' },
             { id: 'ps-role-tabs', label: 'Role', navigateTo: 'ps-role-tabs' },
@@ -1148,6 +1159,8 @@ const AppearancePanel = ({
   onIconSizeChange,
   collapsedBehavior = 'popover',
   onCollapsedBehaviorChange,
+  recordOpenMode = 'page',
+  onRecordOpenModeChange,
 }) => {
   const ref = React.useRef(null);
 
@@ -1468,6 +1481,32 @@ const AppearancePanel = ({
           </div>
         </div>
       </div>
+
+      <div className="x-appearance__section">
+        <div className="x-appearance__label">Record open mode</div>
+        <div className="x-appearance__row">
+          {[
+            { value: 'page', label: 'Full page', icon: 'maximize' },
+            { value: 'drawer', label: 'Drawer', icon: 'minimize' },
+            { value: 'panel', label: 'Side panel', icon: 'sidebar' },
+          ].map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              className={cls(
+                'x-appearance__opt',
+                recordOpenMode === opt.value && 'is-active',
+              )}
+              onClick={() =>
+                onRecordOpenModeChange && onRecordOpenModeChange(opt.value)
+              }
+            >
+              <Icon name={opt.icon} size={14} />
+              <span>{opt.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
@@ -1491,6 +1530,8 @@ const Topbar = ({
   onIconSizeChange,
   collapsedBehavior,
   onCollapsedBehaviorChange,
+  recordOpenMode,
+  onRecordOpenModeChange,
 }) => {
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const [appearanceOpen, setAppearanceOpen] = React.useState(false);
@@ -1645,6 +1686,8 @@ const Topbar = ({
             onIconSizeChange={onIconSizeChange}
             collapsedBehavior={collapsedBehavior}
             onCollapsedBehaviorChange={onCollapsedBehaviorChange}
+            recordOpenMode={recordOpenMode}
+            onRecordOpenModeChange={onRecordOpenModeChange}
           />
         </div>
         <div
@@ -1782,6 +1825,8 @@ const AppShell = ({
   onIconSizeChange,
   collapsedBehavior = 'popover',
   onCollapsedBehaviorChange,
+  recordOpenMode = 'page',
+  onRecordOpenModeChange,
 }) => {
   const [sidebarWidth, setSidebarWidth] = React.useState(232);
   const [autoExpanded, setAutoExpanded] = React.useState(false);
@@ -1850,6 +1895,8 @@ const AppShell = ({
         onIconSizeChange={onIconSizeChange}
         collapsedBehavior={collapsedBehavior}
         onCollapsedBehaviorChange={onCollapsedBehaviorChange}
+        recordOpenMode={recordOpenMode}
+        onRecordOpenModeChange={onRecordOpenModeChange}
       />
       {navLayout === 'sidebar' && (
         <Sidebar

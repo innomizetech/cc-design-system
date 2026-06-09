@@ -886,6 +886,7 @@
   display: block;
   width: 100%;
   height: var(--input-h);
+  line-height: var(--input-h);
   padding: 0 var(--input-pad-x);
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -3169,7 +3170,7 @@
   position: absolute;
   right: 0;
   top: calc(100% + 8px);
-  width: 300px;
+  width: 360px;
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -4079,4 +4080,30 @@
   gap: 8px;
   justify-content: flex-end;
   flex-shrink: 0;
+}
+
+/* ---------- Menu item (overflow menus) -------------------------------- */
+.x-menu-item {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-inline);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+  color: var(--fg-2);
+  width: 100%;
+  box-sizing: border-box;
+}
+.x-menu-item:hover {
+  background: var(--bg-hover);
+  color: var(--fg-1);
+}
+.x-menu-item--danger {
+  color: var(--error-500);
+}
+.x-menu-item--danger:hover {
+  background: var(--error-50, #fef2f2);
+  color: var(--error-600);
 }

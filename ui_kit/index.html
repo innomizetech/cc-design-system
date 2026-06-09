@@ -56,6 +56,10 @@
     <script type="text/babel" src="VendorBillGrid.jsx"></script>
     <script type="text/babel" src="VendorBillDetail.jsx"></script>
     <script type="text/babel" src="VendorBillDetailV2.jsx"></script>
+    <script type="text/babel" src="TransactionGrid.jsx"></script>
+    <script type="text/babel" src="TransactionDetail.jsx"></script>
+    <script type="text/babel" src="VendorBillGridV2.jsx"></script>
+    <script type="text/babel" src="VendorBillDetailP1.jsx"></script>
     <script type="text/babel" src="MatterGrid.jsx"></script>
     <script type="text/babel" src="MatterDetail.jsx"></script>
     <script type="text/babel" src="Settings.jsx"></script>
@@ -82,6 +86,122 @@
         </>
       );
 
+      const BillsPanelLayout = ({
+        crumbs, bill, openBill, closeBill,
+        onPrev, onNext, hasPrev, hasNext, onExpand,
+      }) => {
+        const [panelWidth, setPanelWidth] = React.useState(() => {
+          try { return parseInt(localStorage.getItem('xtnd.billPanelWidth'), 10) || 520; }
+          catch { return 520; }
+        });
+        const onResizeDown = (e) => {
+          e.preventDefault();
+          const startX = e.clientX;
+          const startW = panelWidth;
+          const onMove = (ev) => {
+            const w = Math.max(380, Math.min(Math.round(window.innerWidth * 0.6), startW + (startX - ev.clientX)));
+            setPanelWidth(w);
+          };
+          const onUp = () => {
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            try { localStorage.setItem('xtnd.billPanelWidth', String(panelWidth)); } catch {}
+          };
+          document.addEventListener('mousemove', onMove);
+          document.addEventListener('mouseup', onUp);
+          document.body.style.cursor = 'col-resize';
+          document.body.style.userSelect = 'none';
+        };
+        return (
+          <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+            <div className="x-page" style={{ flex: 1, minWidth: 0, overflow: 'auto' }}>
+              <PageHeader
+                crumbs={crumbs}
+                sub="Track and process vendor bills. Review exceptions, validate caps, and close approved items."
+              />
+              <VendorBillGrid onOpen={openBill} />
+            </div>
+            {bill && (
+              <div style={{ width: panelWidth, flexShrink: 0, position: 'relative', overflow: 'auto' }}>
+                <div
+                  style={{
+                    position: 'absolute', left: 0, top: 0, bottom: 0, width: 4,
+                    cursor: 'col-resize', zIndex: 2,
+                  }}
+                  onMouseDown={onResizeDown}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--a-300)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                />
+                <VendorBillDetailPanel
+                  bill={bill}
+                  onClose={closeBill}
+                  onPrev={onPrev}
+                  onNext={onNext}
+                  hasPrev={hasPrev}
+                  hasNext={hasNext}
+                  onExpand={onExpand}
+                />
+              </div>
+            )}
+          </div>
+        );
+      };
+
+      const TxnPanelLayout = ({ crumbs, txn, openTxn, closeTxn, txnNavProps }) => {
+        const [panelWidth, setPanelWidth] = React.useState(() => {
+          try { return parseInt(localStorage.getItem('xtnd.txnPanelWidth'), 10) || 520; }
+          catch { return 520; }
+        });
+        const onResizeDown = (e) => {
+          e.preventDefault();
+          const startX = e.clientX;
+          const startW = panelWidth;
+          const onMove = (ev) => {
+            const w = Math.max(380, Math.min(Math.round(window.innerWidth * 0.6), startW + (startX - ev.clientX)));
+            setPanelWidth(w);
+          };
+          const onUp = () => {
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            try { localStorage.setItem('xtnd.txnPanelWidth', String(panelWidth)); } catch {}
+          };
+          document.addEventListener('mousemove', onMove);
+          document.addEventListener('mouseup', onUp);
+          document.body.style.cursor = 'col-resize';
+          document.body.style.userSelect = 'none';
+        };
+        return (
+          <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+            <div className="x-page" style={{ flex: 1, minWidth: 0, overflow: 'auto' }}>
+              <PageHeader crumbs={crumbs} sub="Monitor and manage invoice automation transactions" />
+              <TransactionGrid onOpen={openTxn} />
+            </div>
+            {txn && (
+              <div style={{ width: panelWidth, flexShrink: 0, position: 'relative', overflow: 'auto', borderLeft: '1px solid var(--border-subtle)', background: 'var(--bg-page)' }}>
+                <div
+                  style={{
+                    position: 'absolute', left: 0, top: 0, bottom: 0, width: 4,
+                    cursor: 'col-resize', zIndex: 2,
+                  }}
+                  onMouseDown={onResizeDown}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--a-300)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                />
+                <TransactionDetailContent
+                  tx={txn}
+                  onBack={closeTxn}
+                  {...txnNavProps}
+                />
+              </div>
+            )}
+          </div>
+        );
+      };
+
       const App = () => {
         const [screen, setScreen] = React.useState(
           TWEAKS.startScreen || 'invoices',
@@ -95,6 +215,7 @@
         const [moduleId, setModuleId] = React.useState(
           TWEAKS.module || 'willow',
         );
+        const [txn, setTxn] = React.useState(null);
         const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
         const [density, setDensity] = React.useState(() => {
           try {
@@ -135,10 +256,23 @@
             return 'popover';
           }
         });
+        const [recordOpenMode, setRecordOpenMode] = React.useState(() => {
+          try {
+            return localStorage.getItem('xtnd.recordOpenMode') || 'page';
+          } catch {
+            return 'page';
+          }
+        });
+        React.useEffect(() => {
+          try {
+            localStorage.setItem('xtnd.recordOpenMode', recordOpenMode);
+          } catch {}
+        }, [recordOpenMode]);
+
         const [tweaksOpen, setTweaksOpen] = React.useState(false);
         const [notifOpen, setNotifOpen] = React.useState(false);
         const [notifs, setNotifs] = React.useState(() => SAMPLE_NOTIFS);
-        const [billLayout, setBillLayout] = React.useState('v1');
+
 
         React.useEffect(() => {
           document.documentElement.setAttribute('data-density', density);
@@ -211,7 +345,15 @@
           : -1;
 
         const openBill = (row) => {
-          setBill(row || SAMPLE_BILLS[0]);
+          const found =
+            typeof row === 'string'
+              ? SAMPLE_BILLS.find((b) => b.id === row)
+              : row;
+          setBill(found || SAMPLE_BILLS[0]);
+          if (recordOpenMode === 'page') {
+            setScreen('billDetail');
+            setCurrent('billDetail');
+          }
         };
 
         const goBillDelta = (delta) => {
@@ -284,6 +426,9 @@
             bills: [...crumbsBase, { label: 'Vendor bills' }],
             'bills-draft': [...billCrumb, { label: 'Draft' }],
             'bills-submitted': [...billCrumb, { label: 'Submitted' }],
+            'bills-v2': [...crumbsBase, { label: 'Vendor bills (Enhanced)' }],
+            transactions: [{ label: 'Juniper' }, { label: 'Transactions' }],
+            txnDetail: [{ label: 'Juniper' }, { label: 'Transactions', onClick: () => navigate('transactions') }, { label: txn ? txn.operationalBill?.billNumber || 'Transaction' : 'Transaction' }],
             billDetail: [...billCrumb, { label: bill ? bill.id : 'Bill' }],
             // Matters
             matters: [...crumbsBase, { label: 'Matters' }],
@@ -308,8 +453,6 @@
             ],
             'ledger-receivables': [...ledgerCrumb, { label: 'Receivables' }],
             // Other
-            approvals: [...crumbsBase, { label: 'Approvals' }],
-            workflows: [...crumbsBase, { label: 'Workflows' }],
             vendors: [...crumbsBase, { label: 'Clients' }],
             reports: [...crumbsBase, { label: 'Reports' }],
             profile: [{ label: 'Profile' }],
@@ -359,6 +502,8 @@
               onIconSizeChange={(s) => setIconSize(s)}
               collapsedBehavior={collapsedBehavior}
               onCollapsedBehaviorChange={(b) => setCollapsedBehavior(b)}
+              recordOpenMode={recordOpenMode}
+              onRecordOpenModeChange={(m) => setRecordOpenMode(m)}
             >
               {screen === 'dashboard' && (
                 <Dashboard onOpenInvoice={openInvoice} />
@@ -404,61 +549,169 @@
                   }
                 />
               )}
+              {(screen === 'transactions' || screen === 'txnDetail') &&
+                (() => {
+                  const openTxn = (row) => {
+                    setTxn(row);
+                    if (recordOpenMode === 'page') {
+                      setScreen('txnDetail');
+                      setCurrent('txnDetail');
+                    }
+                  };
+                  const txnList = SAMPLE_TRANSACTIONS;
+                  const txnIdx = txn ? txnList.findIndex((r) => r.id === txn.id) : -1;
+                  const goTxnDelta = (delta) => {
+                    const next = txnIdx + delta;
+                    if (next < 0 || next >= txnList.length) return;
+                    openTxn(txnList[next]);
+                  };
+                  const txnNavProps = {
+                    onPrev: () => goTxnDelta(-1),
+                    onNext: () => goTxnDelta(1),
+                    hasPrev: txnIdx > 0,
+                    hasNext: txnIdx >= 0 && txnIdx < txnList.length - 1,
+                  };
+
+                  if (screen === 'txnDetail' && txn) {
+                    return (
+                      <TransactionDetailContent
+                        tx={txn}
+                        onBack={() => navigate('transactions')}
+                        breadcrumbs={crumbs}
+                        isFullPage
+                        {...txnNavProps}
+                      />
+                    );
+                  }
+
+                  if (recordOpenMode === 'panel') {
+                    return (
+                      <TxnPanelLayout
+                        crumbs={crumbs}
+                        txn={txn}
+                        openTxn={openTxn}
+                        closeTxn={() => setTxn(null)}
+                        txnNavProps={txnNavProps}
+                      />
+                    );
+                  }
+
+                  return (
+                    <>
+                      <div className="x-page">
+                        <PageHeader crumbs={crumbs} sub="Monitor and manage invoice automation transactions" />
+                        <TransactionGrid onOpen={openTxn} />
+                      </div>
+                      {recordOpenMode === 'drawer' && (
+                        <DetailDrawer
+                          open={!!txn}
+                          onClose={() => setTxn(null)}
+                        >
+                          {txn && (
+                            <TransactionDetailContent
+                              tx={txn}
+                              onBack={() => setTxn(null)}
+                              {...txnNavProps}
+                            />
+                          )}
+                        </DetailDrawer>
+                      )}
+                    </>
+                  );
+                })()
+              }
               {(screen === 'bills' ||
                 screen === 'bills-draft' ||
                 screen === 'bills-submitted') && (
-                <>
-                  <div className="x-page">
-                    <PageHeader
-                      crumbs={crumbs}
-                      sub={
-                        screen === 'bills-draft'
-                          ? 'Track and process vendor bills. Review exceptions, validate caps, and close approved items.'
-                          : screen === 'bills-submitted'
-                            ? 'Track and process vendor bills. Review exceptions, validate caps, and close approved items.'
-                            : 'Track and process vendor bills. Review exceptions, validate caps, and close approved items.'
-                      }
-                    />
-                    <VendorBillGrid onOpen={openBill} />
-                  </div>
-                  <DetailDrawer
-                    open={!!bill}
-                    onClose={() => setBill(null)}
-                    title={bill ? `${bill.vendor} — ${bill.id}` : ''}
-                    subtitle={
-                      bill ? `${fmtMoney(bill.amount)} · ${bill.status}` : ''
+                recordOpenMode === 'panel' ? (
+                  <BillsPanelLayout
+                    crumbs={crumbs}
+                    bill={bill}
+                    openBill={openBill}
+                    closeBill={() => setBill(null)}
+                    onPrev={() => goBillDelta(-1)}
+                    onNext={() => goBillDelta(1)}
+                    hasPrev={currentBillIdx > 0}
+                    hasNext={
+                      currentBillIdx >= 0 &&
+                      currentBillIdx < SAMPLE_BILLS.length - 1
                     }
-                  >
-                    {bill &&
-                      (billLayout === 'v1' ? (
-                        <VendorBillDetail
-                          bill={bill}
-                          onBack={() => setBill(null)}
-                          onPrev={() => goBillDelta(-1)}
-                          onNext={() => goBillDelta(1)}
-                          hasPrev={currentBillIdx > 0}
-                          hasNext={
-                            currentBillIdx >= 0 &&
-                            currentBillIdx < SAMPLE_BILLS.length - 1
-                          }
-                          onSwitchLayout={() => setBillLayout('v2')}
-                        />
-                      ) : (
-                        <VendorBillDetailV2
-                          bill={bill}
-                          onBack={() => setBill(null)}
-                          onPrev={() => goBillDelta(-1)}
-                          onNext={() => goBillDelta(1)}
-                          hasPrev={currentBillIdx > 0}
-                          hasNext={
-                            currentBillIdx >= 0 &&
-                            currentBillIdx < SAMPLE_BILLS.length - 1
-                          }
-                          onSwitchLayout={() => setBillLayout('v1')}
-                        />
-                      ))}
-                  </DetailDrawer>
-                </>
+                    onExpand={() => {
+                      setScreen('billDetail');
+                      setCurrent('billDetail');
+                    }}
+                  />
+                ) : (
+                  <>
+                    <div className="x-page">
+                      <PageHeader
+                        crumbs={crumbs}
+                        sub="Track and process vendor bills. Review exceptions, validate caps, and close approved items."
+                      />
+                      <VendorBillGrid onOpen={openBill} />
+                    </div>
+                    {recordOpenMode === 'drawer' && (
+                      <DetailDrawer
+                        open={!!bill}
+                        onClose={() => setBill(null)}
+                        title={bill ? `${bill.vendor} — ${bill.id}` : ''}
+                        subtitle={
+                          bill ? `${fmtMoney(bill.amount)} · ${bill.status}` : ''
+                        }
+                        actions={bill && (
+                          <div className="x-nav-arrows">
+                            <button
+                              onClick={() => goBillDelta(-1)}
+                              disabled={currentBillIdx <= 0}
+                              title="Previous bill"
+                            >
+                              <Icon name="chevronLeft" size={14} />
+                            </button>
+                            <button
+                              onClick={() => goBillDelta(1)}
+                              disabled={
+                                currentBillIdx < 0 ||
+                                currentBillIdx >= SAMPLE_BILLS.length - 1
+                              }
+                              title="Next bill"
+                            >
+                              <Icon name="chevronRight" size={14} />
+                            </button>
+                          </div>
+                        )}
+                      >
+                        {bill && (
+                          <VendorBillDetailContent
+                            bill={bill}
+                          />
+                        )}
+                      </DetailDrawer>
+                    )}
+                  </>
+                )
+              )}
+              {screen === 'bills-v2' && (
+                <div className="x-page">
+                  <PageHeader
+                    crumbs={crumbs}
+                    sub="Track and process vendor bills. Global filters, stats, and grid."
+                  />
+                  <VendorBillGridV2 onOpen={openBill} />
+                </div>
+              )}
+              {screen === 'billDetail' && bill && (
+                <VendorBillDetailPage
+                  bill={bill}
+                  breadcrumbs={crumbs}
+                  onBack={() => navigate('bills')}
+                  onPrev={() => goBillDelta(-1)}
+                  onNext={() => goBillDelta(1)}
+                  hasPrev={currentBillIdx > 0}
+                  hasNext={
+                    currentBillIdx >= 0 &&
+                    currentBillIdx < SAMPLE_BILLS.length - 1
+                  }
+                />
               )}
               {(screen === 'matters' ||
                 screen === 'matters-active' ||
@@ -514,9 +767,12 @@
                 'invoices-approved',
                 'invoices-all',
                 'detail',
+                'transactions',
+                'txnDetail',
                 'bills',
                 'bills-draft',
                 'bills-submitted',
+                'bills-v2',
                 'billDetail',
                 'matters',
                 'matters-active',

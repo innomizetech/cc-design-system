@@ -5991,6 +5991,18 @@ const PSMatterDetail = () => {
   );
 };
 
+// ---------- Vendor Bill — Tab + Side Column (reuses VendorBillDetailPage) --
+const PSVendorBillTabs = () => (
+  <VendorBillDetailPage
+    bill={PS_BILL}
+    breadcrumbs={[
+      { label: 'Paradigms' },
+      { label: 'Tab + Side Column' },
+      { label: 'Vendor Bill' },
+    ]}
+  />
+);
+
 // =====================================================================
 // PARADIGM SHOWCASE — rendered as a screen inside the main App.
 // Accepts `paradigm` prop mapped from the nav route (e.g. 'ps-1a' → '1a').
@@ -5999,6 +6011,7 @@ const PS_ROUTE_MAP = {
   'ps-tabs': '1a',
   'ps-1a': '1a',
   'ps-1b': '1b',
+  'ps-vendor-bill-tabs': 'vendor-bill-tabs',
   'ps-matter': 'matter',
   'ps-user-tabs': 'user-tabs',
   'ps-role-tabs': 'role-tabs',
@@ -6019,6 +6032,7 @@ const ParadigmShowcase = ({ screen }) => {
     <>
       {paradigm === '1a' && <Paradigm1A />}
       {paradigm === '1b' && <Paradigm1B />}
+      {paradigm === 'vendor-bill-tabs' && <PSVendorBillTabs />}
       {paradigm === 'matter' && <PSMatterDetail />}
       {paradigm === 'invoice-stacked' && <InvoiceStacked />}
       {paradigm === '2' && <Paradigm2 />}

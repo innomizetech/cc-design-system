@@ -22,6 +22,7 @@ const Icon = ({ name, size = 16, className = '', style = {} }) => {
     plus: 'M12 5v14M5 12h14',
     minus: 'M5 12h14',
     filter: 'M3 5h18M6 12h12M10 19h4',
+    copy: 'M8 4v12h10V8l-4-4H8zM6 8H4v14h10v-2',
     download: 'M12 3v13M7 12l5 5 5-5M5 21h14',
     upload: 'M12 21V8M7 13l5-5 5 5M5 3h14',
     chevronDown: 'M6 9l6 6 6-6',

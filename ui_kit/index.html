@@ -258,7 +258,7 @@
         });
         const [recordOpenMode, setRecordOpenMode] = React.useState(() => {
           try {
-            return localStorage.getItem('xtnd.recordOpenMode') || 'page';
+            return localStorage.getItem('xtnd.recordOpenMode') || 'drawer';
           } catch {
             return 'page';
           }
@@ -549,10 +549,14 @@
                   }
                 />
               )}
-              {screen === 'transactions' &&
+              {(screen === 'transactions' || screen === 'txnDetail') &&
                 (() => {
                   const openTxn = (row) => {
                     setTxn(row);
+                    if (recordOpenMode === 'page') {
+                      setScreen('txnDetail');
+                      setCurrent('txnDetail');
+                    }
                   };
                   const txnList = SAMPLE_TRANSACTIONS;
                   const txnIdx = txn ? txnList.findIndex((r) => r.id === txn.id) : -1;
@@ -568,24 +572,50 @@
                     hasNext: txnIdx >= 0 && txnIdx < txnList.length - 1,
                   };
 
+                  if (screen === 'txnDetail' && txn) {
+                    return (
+                      <TransactionDetailContent
+                        tx={txn}
+                        onBack={() => navigate('transactions')}
+                        breadcrumbs={crumbs}
+                        isFullPage
+                        {...txnNavProps}
+                      />
+                    );
+                  }
+
+                  if (recordOpenMode === 'panel') {
+                    return (
+                      <TxnPanelLayout
+                        crumbs={crumbs}
+                        txn={txn}
+                        openTxn={openTxn}
+                        closeTxn={() => setTxn(null)}
+                        txnNavProps={txnNavProps}
+                      />
+                    );
+                  }
+
                   return (
                     <>
                       <div className="x-page">
                         <PageHeader crumbs={crumbs} sub="Monitor and manage invoice automation transactions" />
                         <TransactionGrid onOpen={openTxn} />
                       </div>
-                      <DetailDrawer
-                        open={!!txn}
-                        onClose={() => setTxn(null)}
-                      >
-                        {txn && (
-                          <TransactionDetailContent
-                            tx={txn}
-                            onBack={() => setTxn(null)}
-                            {...txnNavProps}
-                          />
-                        )}
-                      </DetailDrawer>
+                      {(recordOpenMode === 'drawer' || !recordOpenMode) && (
+                        <DetailDrawer
+                          open={!!txn}
+                          onClose={() => setTxn(null)}
+                        >
+                          {txn && (
+                            <TransactionDetailContent
+                              tx={txn}
+                              onBack={() => setTxn(null)}
+                              {...txnNavProps}
+                            />
+                          )}
+                        </DetailDrawer>
+                      )}
                     </>
                   );
                 })()
@@ -738,6 +768,7 @@
                 'invoices-all',
                 'detail',
                 'transactions',
+                'txnDetail',
                 'bills',
                 'bills-draft',
                 'bills-submitted',

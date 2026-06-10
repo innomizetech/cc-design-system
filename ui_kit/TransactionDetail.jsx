@@ -97,15 +97,15 @@ const NoticeBanner = ({ tx }) => {
     return (
       <div style={{
         padding: '12px 16px', borderRadius: 'var(--radius-md)',
-        background: 'var(--error-50, #fef2f2)', border: '1px solid var(--error-200, #fecaca)',
+        background: 'var(--danger-50)', border: '1px solid var(--danger-500)',
         display: 'flex', gap: 12, alignItems: 'flex-start',
       }}>
-        <Icon name="warning" size={16} style={{ color: 'var(--error-500)', flex: 'none', marginTop: 2 }} />
+        <Icon name="warning" size={16} style={{ color: 'var(--danger-500)', flex: 'none', marginTop: 2 }} />
         <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 500, color: 'var(--error-700, var(--fg-1))' }}>
+          <div style={{ fontWeight: 500, color: 'var(--danger-700)' }}>
             Error: {tx.lastError.code}
           </div>
-          <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--error-600, var(--fg-2))', marginTop: 2 }}>
+          <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--danger-600, var(--danger-500))', marginTop: 2 }}>
             {tx.lastError.message} — Attempt #{tx.lastError.attemptNumber}
           </div>
         </div>
@@ -449,9 +449,9 @@ const EXEC_STATUS_VARIANT = {
 };
 
 const EXEC_BORDER = {
-  succeeded: 'var(--success-400, #4ade80)',
-  failed: 'var(--error-400, #f87171)',
-  running: 'var(--warning-400, #facc15)',
+  succeeded: 'var(--success-500)',
+  failed: 'var(--danger-500)',
+  running: 'var(--warn-500)',
   superseded: 'var(--border)',
 };
 
@@ -538,22 +538,22 @@ const ExecLogEntry = ({ log }) => {
         <div style={{
           padding: 'var(--sp-inline) var(--sp-group)',
           borderRadius: 'var(--radius-sm)',
-          background: 'var(--error-50, rgba(239,68,68,0.06))',
-          border: '1px solid var(--error-200, rgba(239,68,68,0.15))',
+          background: 'var(--danger-50)',
+          border: '1px solid var(--danger-500)',
           display: 'flex', flexDirection: 'column', gap: 4,
         }}>
           {log.errors.map((e, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--sp-inline)', fontSize: 'var(--fs-sm)' }}>
-              <Icon name="warning" size={12} style={{ color: 'var(--error-500)', flex: 'none', marginTop: 3 }} />
+              <Icon name="warning" size={12} style={{ color: 'var(--danger-500)', flex: 'none', marginTop: 3 }} />
               <div style={{ flex: 1 }}>
                 <div>
                   <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--fg-1)', fontSize: 'var(--fs-xs)' }}>{e.code}</span>
                   {e.retryable && (
                     <span style={{
                       marginLeft: 6, fontSize: 10, fontWeight: 600,
-                      color: 'var(--warning-600, var(--fg-3))',
+                      color: 'var(--warn-500)',
                       padding: '1px 5px', borderRadius: 'var(--radius-sm)',
-                      border: '1px solid var(--warning-200, var(--border-subtle))',
+                      border: '1px solid var(--warn-50)',
                     }}>retryable</span>
                   )}
                 </div>
@@ -611,7 +611,7 @@ const ExecLogEntry = ({ log }) => {
             )}
             <ScreenshotLink screenshotPrefix={log.tpaSubmission.screenshotPrefix} />
             {log.tpaSubmission.errors && log.tpaSubmission.errors.length > 0 && log.tpaSubmission.errors.map((e, i) => (
-              <div key={i} style={{ fontSize: 'var(--fs-xs)', color: 'var(--error-500)' }}>
+              <div key={i} style={{ fontSize: 'var(--fs-xs)', color: 'var(--danger-500)' }}>
                 {e.message}{e.description ? ' — ' + e.description : ''}
                 {e.occurredAt && <span style={{ color: 'var(--fg-4)', marginLeft: 6 }}>{fmtDateTime(e.occurredAt)}</span>}
               </div>
@@ -791,7 +791,7 @@ const TransactionDetailContent = ({
             </button>
           )}
           <div style={{ flex: 1, minWidth: 0 }}>
-            {/* Line 1: Matter + invoice type + flags */}
+            {/* Line 1: Matter (number + name as single link) + invoice type + flags + delivery */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               {tx.matterExtId ? (
                 <a
@@ -804,12 +804,12 @@ const TransactionDetailContent = ({
                     color: 'var(--fg-accent)', textDecoration: 'none',
                   }}
                 >
-                  {tx.matter}
+                  {tx.matterDisplayNumber && tx.matterDisplayNumber + ' — '}{tx.matter}
                   <Icon name="external" size={12} style={{ marginLeft: 4, verticalAlign: 'middle' }} />
                 </a>
               ) : (
                 <span style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-xl)', fontWeight: 500, color: 'var(--fg-1)' }}>
-                  {tx.matter}
+                  {tx.matterDisplayNumber && tx.matterDisplayNumber + ' — '}{tx.matter}
                 </span>
               )}
               <Badge variant={tx.invoiceType === 'evergreen' ? 'info' : 'neutral'} size="sm">
@@ -817,6 +817,9 @@ const TransactionDetailContent = ({
               </Badge>
               {tx.isSir && <TxnBadge type="SIR" />}
               {tx.isSplit && <TxnBadge type="Split" />}
+              <Badge variant="neutral" size="sm">
+                {tx.deliveryMethod === 'tpa' ? 'TPA' : 'Email'}
+              </Badge>
             </div>
             {/* Line 2: Status + TX ID */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
